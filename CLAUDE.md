@@ -27,8 +27,10 @@ After every code change:
 | `src/VehicleSyncSettings.lua` | Server settings, `vehicleSync.xml` in the savegame, console `vsSettings` / `vsSet` |
 | `src/network/VehicleSyncRequestEvent.lua` | client -> server operator actions |
 | `src/network/VehicleSyncStateEvent.lua` | server -> clients full state (+ feedback-only variant for refusals) |
-| `src/VehicleSyncSpec.lua` | Vehicle specialization (glue): requests, server rules, driving override, streams, input, HUD |
-| `src/VehicleSync.lua` | Bootstrap: registers the spec for all Drivable+Enterable+Motorized types, save hook, console |
+| `src/VehicleSyncSpec.lua` | Vehicle specialization (glue): requests, server rules, driving override, streams, input, home point arrow |
+| `src/hud/VehicleSyncHudLayout.lua` | Pure terminal model: design tokens, `buildView(snapshot)`, `layout`, plan view projection, hit test |
+| `src/hud/VehicleSyncHud.lua` | Terminal (glue): drawing with one overlay on `textures/hud_icons.dds`, mouse, cursor, drag, position in modSettings |
+| `src/VehicleSync.lua` | Bootstrap: registers the spec for all Drivable+Enterable+Motorized types, save hook, console, forwards draw/mouseEvent to the HUD |
 
 Key facts:
 - **Server-authoritative.** Clients only send requests; `VehicleSyncSpec.handleRequest` accepts a
@@ -44,6 +46,13 @@ Key facts:
 - Join in progress: `onWriteStream` / `onReadStream`; the leader may be streamed after the follower,
   so the leader id is resolved lazily (`pendingLeaderId`, `vsGetLeader`).
 - Timers / takeover flags reset only when engaged-ness changes (ACQUIRING <-> TRACKING keeps them).
+- **Terminal (HUD):** only `VS_TOGGLE_HUD` (Left Alt + Y) has a default key; the other 9 actions are
+  declared without `<actionBinding>` (bindable in Controls). Alt+Y opens the terminal with the cursor,
+  or only brings the cursor back while it is open; right click hides the cursor; only the × button
+  (or leaving the vehicle) closes it. The HUD hides only a cursor it showed itself and locks
+  `spec_enterable.cameras[].isRotatable` while the cursor is on. Buttons call `vehicle:vsRequest`.
+- Colours in `VehicleSyncHudLayout.COLOR` are sRGB hex converted to linear (engine colour space).
+- Home point arrow: `drawDebugLine` arrow, tip 6 m above the terrain, shown 5 s after set/nudge.
 
 ## GIANTS TestRunner rules (learned the hard way)
 
@@ -56,7 +65,9 @@ Key facts:
 - `tests/specs/ModDesc_spec.lua` and `ReleaseRules_spec.lua` encode these rules plus the ModHub
   guidelines (EN/DE texts, capitalised l10n, hotkeys documented, only lua/xml/dds in the zip).
 
-## Icon
+## Icon and HUD textures
 
 `python tools/make_icon.py` draws `_art/icon_VehicleSync.png` and converts it with texconv
 (found in `..\FS25_WorkflowManager\tools\texconv.exe`).
+`python tools/make_hud_icons.py` draws the terminal atlas `textures/hud_icons.dds` (4x4 cells of
+64 px, order must match `VehicleSyncHudLayout.ICON`; the solid cell is used for all rectangles).

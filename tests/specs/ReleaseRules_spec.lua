@@ -30,7 +30,7 @@ describe("release rules", function()
     local sources = listFiles("src\\*.lua")
 
     it("finds all source files", function()
-        assert.equals(7, #sources)
+        assert.equals(9, #sources)
     end)
 
     it("uses none of the calls TestRunner's PublicLuaCheck rejects", function()
@@ -67,9 +67,10 @@ describe("release rules", function()
 
     it("ships only lua, xml and dds files", function()
         local release = readFile("create_release.ps1")
-        assert.contains(release, "$include = @('modDesc.xml', 'icon_VehicleSync.dds', 'src', 'translations')")
+        assert.contains(release, "$include = @('modDesc.xml', 'icon_VehicleSync.dds', 'src', 'textures', 'translations')")
         local shipped = {}
         for _, f in ipairs(listFiles("src\\*")) do table.insert(shipped, f) end
+        for _, f in ipairs(listFiles("textures\\*")) do table.insert(shipped, f) end
         for _, f in ipairs(listFiles("translations\\*")) do table.insert(shipped, f) end
         for _, file in ipairs(shipped) do
             if file:find("%.") then

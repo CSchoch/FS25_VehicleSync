@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <l10n>
     <texts>
+        <text name="input_VS_TOGGLE_HUD" text="Fahrzeug Sync: Terminal öffnen / Mauszeiger zeigen"/>
         <text name="input_VS_TOGGLE_NETWORK" text="Fahrzeug Sync: Sync-Netzwerk öffnen / schließen"/>
         <text name="input_VS_CONNECT" text="Fahrzeug Sync: Sync-Netzwerk beitreten / verlassen"/>
         <text name="input_VS_ENGAGE" text="Fahrzeug Sync: Synchronisation aktivieren / beenden"/>
@@ -28,13 +29,29 @@
         <text name="vs_state_tracking" text="Synchron"/>
         <text name="vs_network_opened" text="Sync-Netzwerk geöffnet"/>
         <text name="vs_network_closed" text="Sync-Netzwerk geschlossen"/>
-        <text name="vs_hud_follower" text="Fahrzeug Sync: %s - %s"/>
-        <text name="vs_hud_home" text="Heimposition: %s, %.2f m vor/zurück"/>
-        <text name="vs_hud_left" text="%.2f m links"/>
-        <text name="vs_hud_right" text="%.2f m rechts"/>
-        <text name="vs_hud_error" text="Abweichung: %.2f m seitlich, %.2f m vor/zurück"/>
-        <text name="vs_hud_inZone" text="Im Arbeitsbereich - Synchronisation möglich"/>
-        <text name="vs_hud_leader" text="Sync-Netzwerk offen - Wagen: %d"/>
+        <text name="vs_action_toggleHud" text="Fahrzeug Sync Terminal"/>
+        <text name="vs_button_openNetwork" text="Netzwerk öffnen"/>
+        <text name="vs_button_closeNetwork" text="Netzwerk schließen"/>
+        <text name="vs_button_join" text="Netzwerk beitreten"/>
+        <text name="vs_button_leave" text="Verlassen"/>
+        <text name="vs_button_engage" text="Aktivieren"/>
+        <text name="vs_button_disengage" text="Beenden"/>
+        <text name="vs_button_setHome" text="Heim setzen"/>
+        <text name="vs_button_release" text="Wagen freigeben"/>
+        <text name="vs_hud_title" text="Fahrzeug Sync"/>
+        <text name="vs_hud_carts" text="Wagen: %d"/>
+        <text name="vs_hud_cartFill" text="Wagen %d %%"/>
+        <text name="vs_hud_lateral" text="Seitlich"/>
+        <text name="vs_hud_foreAft" text="Vor/zurück"/>
+        <text name="vs_hud_inZone" text="Im Arbeitsbereich"/>
+        <text name="vs_hud_driveIntoZone" text="In den Arbeitsbereich fahren"/>
+        <text name="vs_hud_networkOpen" text="Netzwerk offen"/>
+        <text name="vs_hud_networkClosed" text="Netzwerk geschlossen"/>
+        <text name="vs_hud_emptyClosed" text="Netzwerk öffnen, damit ein Wagen beitreten kann"/>
+        <text name="vs_hud_nearest" text="Nächstes Netzwerk: %s, %d m"/>
+        <text name="vs_hud_noNetwork" text="Kein offenes Sync-Netzwerk in der Nähe"/>
+        <text name="vs_hud_waiting" text="Warte auf einen Wagen"/>
+        <text name="vs_hud_noneEngaged" text="Kein Wagen synchronisiert"/>
         <text name="vs_reason_connected" text="Mit dem Sync-Netzwerk verbunden"/>
         <text name="vs_reason_disconnected" text="Sync-Netzwerk verlassen"/>
         <text name="vs_reason_engaged" text="Synchronisation aktiviert"/>

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <l10n>
     <texts>
+        <text name="input_VS_TOGGLE_HUD" text="Vehicle Sync: Open terminal / show mouse cursor"/>
         <text name="input_VS_TOGGLE_NETWORK" text="Vehicle Sync: Open / close sync network"/>
         <text name="input_VS_CONNECT" text="Vehicle Sync: Join / leave sync network"/>
         <text name="input_VS_ENGAGE" text="Vehicle Sync: Engage / disengage sync"/>
@@ -28,13 +29,29 @@
         <text name="vs_state_tracking" text="Tracking"/>
         <text name="vs_network_opened" text="Sync network opened"/>
         <text name="vs_network_closed" text="Sync network closed"/>
-        <text name="vs_hud_follower" text="Vehicle Sync: %s - %s"/>
-        <text name="vs_hud_home" text="Home point: %s, %.2f m fore/aft"/>
-        <text name="vs_hud_left" text="%.2f m left"/>
-        <text name="vs_hud_right" text="%.2f m right"/>
-        <text name="vs_hud_error" text="Deviation: %.2f m lateral, %.2f m fore/aft"/>
-        <text name="vs_hud_inZone" text="In the operational zone - sync can be engaged"/>
-        <text name="vs_hud_leader" text="Sync network open - carts: %d"/>
+        <text name="vs_action_toggleHud" text="Vehicle Sync terminal"/>
+        <text name="vs_button_openNetwork" text="Open network"/>
+        <text name="vs_button_closeNetwork" text="Close network"/>
+        <text name="vs_button_join" text="Join network"/>
+        <text name="vs_button_leave" text="Leave"/>
+        <text name="vs_button_engage" text="Engage"/>
+        <text name="vs_button_disengage" text="Disengage"/>
+        <text name="vs_button_setHome" text="Set home"/>
+        <text name="vs_button_release" text="Release cart"/>
+        <text name="vs_hud_title" text="Vehicle Sync"/>
+        <text name="vs_hud_carts" text="Carts: %d"/>
+        <text name="vs_hud_cartFill" text="Cart %d %%"/>
+        <text name="vs_hud_lateral" text="Lateral"/>
+        <text name="vs_hud_foreAft" text="Fore/aft"/>
+        <text name="vs_hud_inZone" text="In the operational zone"/>
+        <text name="vs_hud_driveIntoZone" text="Drive into the operational zone"/>
+        <text name="vs_hud_networkOpen" text="Network open"/>
+        <text name="vs_hud_networkClosed" text="Network closed"/>
+        <text name="vs_hud_emptyClosed" text="Open the network so a cart can join"/>
+        <text name="vs_hud_nearest" text="Nearest network: %s, %d m"/>
+        <text name="vs_hud_noNetwork" text="No open sync network nearby"/>
+        <text name="vs_hud_waiting" text="Waiting for a cart to join"/>
+        <text name="vs_hud_noneEngaged" text="No cart engaged"/>
         <text name="vs_reason_connected" text="Connected to the sync network"/>
         <text name="vs_reason_disconnected" text="Left the sync network"/>
         <text name="vs_reason_engaged" text="Sync engaged"/>

@@ -2,7 +2,8 @@
     VehicleSync
 
     Mod entry point: registers the vehicle specialization for every drivable vehicle type,
-    loads / saves the server settings with the savegame and provides the console commands.
+    loads / saves the server settings with the savegame, provides the console commands and
+    forwards draw / mouse events to the terminal (VehicleSyncHud).
 ]]
 
 ---@class VehicleSync
@@ -63,6 +64,7 @@ function VehicleSync:loadMap(filename)
     else
         VehicleSyncSettings.reset()
     end
+    VehicleSyncHud:loadPosition()
 end
 
 ---Mod event: map unloaded
@@ -73,6 +75,17 @@ function VehicleSync:deleteMap()
         VehicleSync.consoleCommandsAdded = false
     end
     VehicleSyncSettings.reset()
+    VehicleSyncHud:delete()
+end
+
+---Mod event: every frame, after the game HUD
+function VehicleSync:draw()
+    VehicleSyncHud:draw()
+end
+
+---Mod event: mouse input
+function VehicleSync:mouseEvent(posX, posY, isDown, isUp, button)
+    VehicleSyncHud:mouseEvent(posX, posY, isDown, isUp, button)
 end
 
 ---Saves the settings together with the savegame (server)

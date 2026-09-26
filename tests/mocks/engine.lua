@@ -92,25 +92,60 @@ function Utils.prependedFunction(original, prepended)
     end
 end
 
--- world drawing: circles and lines are recorded
-M.drawn = { circles = {}, lines = {} }
+-- world drawing: lines are recorded
+M.drawn = { lines = {}, rects = {}, texts = {} }
 g_time = 0
 g_terrainNode = 1
 g_gui = { visible = false, getIsGuiVisible = function(self) return self.visible end }
 g_noHudModeEnabled = false
 function getTerrainHeightAtWorldPos(terrainNode, x, y, z) return 0 end
-DebugUtil = {}
-function DebugUtil.drawDebugCircle(x, y, z, radius, steps, color, alignToTerrain)
-    table.insert(M.drawn.circles, { x = x, y = y, z = z, radius = radius, color = color })
-end
 function drawDebugLine(x1, y1, z1, r1, g1, b1, x2, y2, z2, r2, g2, b2)
     table.insert(M.drawn.lines, { x1 = x1, y1 = y1, z1 = z1, x2 = x2, y2 = y2, z2 = z2, color = { r1, g1, b1 } })
 end
 
+-- screen drawing: every rendered overlay and text is recorded
+function getNormalizedScreenValues(x, y) return x / 1920, y / 1080 end
+g_gameSettings = { values = { uiScale = 1 } }
+function g_gameSettings:getValue(name) return self.values[name] end
+
+M.overlays = {}
+Overlay = {}
+Overlay.__index = Overlay
+function Overlay.new(filename, x, y, width, height)
+    local o = setmetatable({ filename = filename, x = x, y = y, width = width, height = height, color = { 1, 1, 1, 1 }, deleted = false }, Overlay)
+    table.insert(M.overlays, o)
+    return o
+end
+function Overlay:setUVs(uvs) self.uvs = uvs end
+function Overlay:setPosition(x, y) self.x, self.y = x, y end
+function Overlay:setDimension(width, height) self.width, self.height = width, height end
+function Overlay:setColor(r, g, b, a) self.color = { r, g, b, a } end
+function Overlay:render()
+    table.insert(M.drawn.rects, { x = self.x, y = self.y, w = self.width, h = self.height, color = self.color, uvs = self.uvs })
+end
+function Overlay:delete() self.deleted = true end
+
+RenderText = { ALIGN_LEFT = 0, ALIGN_CENTER = 1, ALIGN_RIGHT = 2, VERTICAL_ALIGN_BASELINE = 0, VERTICAL_ALIGN_MIDDLE = 2 }
+M.textState = {}
+function setTextBold(bold) M.textState.bold = bold end
+function setTextColor(r, g, b, a) M.textState.color = { r, g, b, a } end
+function setTextAlignment(alignment) M.textState.alignment = alignment end
+function setTextVerticalAlignment(alignment) M.textState.verticalAlignment = alignment end
+function getTextWidth(size, text) return size * #text * 0.5 end
+function renderText(x, y, size, text)
+    table.insert(M.drawn.texts, { x = x, y = y, size = size, text = text, bold = M.textState.bold,
+        color = M.textState.color, alignment = M.textState.alignment })
+end
+
+Input = { MOUSE_BUTTON_LEFT = 1, MOUSE_BUTTON_MIDDLE = 2, MOUSE_BUTTON_RIGHT = 3 }
+g_modSettingsDirectory = "modSettings/"
+M.createdFolders = {}
+function createFolder(path) table.insert(M.createdFolders, path) end
+
 GS_PRIO_VERY_HIGH, GS_PRIO_HIGH, GS_PRIO_NORMAL, GS_PRIO_LOW, GS_PRIO_VERY_LOW = 1, 2, 3, 4, 5
 
 InputAction = {}
-for _, name in ipairs({ "VS_TOGGLE_NETWORK", "VS_CONNECT", "VS_ENGAGE", "VS_SET_HOME", "VS_NUDGE_LEFT",
+for _, name in ipairs({ "VS_TOGGLE_HUD", "VS_TOGGLE_NETWORK", "VS_CONNECT", "VS_ENGAGE", "VS_SET_HOME", "VS_NUDGE_LEFT",
     "VS_NUDGE_RIGHT", "VS_NUDGE_FORWARD", "VS_NUDGE_BACK", "VS_RELEASE" }) do
     InputAction[name] = name
 end
@@ -118,6 +153,10 @@ end
 g_inputBinding = { texts = {}, priorities = {} }
 function g_inputBinding:setActionEventText(id, text) self.texts[id] = text end
 function g_inputBinding:setActionEventTextPriority(id, prio) self.priorities[id] = prio end
+function g_inputBinding:setShowMouseCursor(show)
+    self.showMouseCursor = show
+    table.insert(self.cursorCalls, show)
+end
 
 FSBaseMission = { INGAME_NOTIFICATION_OK = "ok", INGAME_NOTIFICATION_CRITICAL = "critical" }
 
@@ -361,6 +400,8 @@ M.SOURCE_ORDER = {
     "src/network/VehicleSyncRequestEvent.lua",
     "src/network/VehicleSyncStateEvent.lua",
     "src/VehicleSyncSpec.lua",
+    "src/hud/VehicleSyncHudLayout.lua",
+    "src/hud/VehicleSyncHud.lua",
 }
 
 ---Loads the pure logic and the specialization (without the VehicleSync bootstrap)
@@ -386,7 +427,14 @@ function M.reset()
     Logging.calls = { error = {}, warning = {}, info = {} }
     g_inputBinding.texts = {}
     g_inputBinding.priorities = {}
-    M.drawn = { circles = {}, lines = {} }
+    M.drawn = { lines = {}, rects = {}, texts = {} }
+    M.overlays = {}
+    M.textState = {}
+    M.createdFolders = {}
+    g_inputBinding.showMouseCursor = false
+    g_inputBinding.cursorCalls = {}
+    g_gameSettings.values = { uiScale = 1 }
+    g_modSettingsDirectory = "modSettings/"
     g_time = 0
     g_gui.visible = false
     g_noHudModeEnabled = false

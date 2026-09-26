@@ -21,6 +21,8 @@ local TEST_FILES = {
     "tests/specs/VehicleSyncSpec_spec.lua",
     "tests/specs/VehicleSyncSpecNetwork_spec.lua",
     "tests/specs/VehicleSyncSpecInput_spec.lua",
+    "tests/specs/VehicleSyncHudLayout_spec.lua",
+    "tests/specs/VehicleSyncHud_spec.lua",
     "tests/specs/VehicleSync_spec.lua",
     "tests/specs/ModDesc_spec.lua",
     "tests/specs/ReleaseRules_spec.lua",
@@ -34,6 +36,8 @@ local SOURCE_FILES = {
     "src/network/VehicleSyncStateEvent.lua",
     "src/network/VehicleSyncRequestEvent.lua",
     "src/VehicleSyncSpec.lua",
+    "src/hud/VehicleSyncHudLayout.lua",
+    "src/hud/VehicleSyncHud.lua",
     "src/VehicleSync.lua",
 }
 

@@ -123,6 +123,24 @@ describe("VehicleSync bootstrap", function()
         VehicleSync.onSaveCareerMissionInfo(nil)
     end)
 
+    it("forwards draw and mouse events to the terminal and keeps its position per map", function()
+        engine.files["modSettings/FS25_VehicleSync.xml"] = { ["vehicleSync.hud#left"] = 0.1, ["vehicleSync.hud#top"] = 0.9 }
+        VehicleSync:loadMap("map.xml")
+        assert.equals(0.1, VehicleSyncHud.left)
+
+        local draw, mouseEvent = VehicleSyncHud.draw, VehicleSyncHud.mouseEvent
+        local calls = {}
+        VehicleSyncHud.draw = function(self) table.insert(calls, "draw") end
+        VehicleSyncHud.mouseEvent = function(self, x, y, isDown, isUp, button) table.insert(calls, { x, y, isDown, isUp, button }) end
+        VehicleSync:draw()
+        VehicleSync:mouseEvent(0.2, 0.3, true, false, 1)
+        VehicleSyncHud.draw, VehicleSyncHud.mouseEvent = draw, mouseEvent
+        assert.same({ "draw", { 0.2, 0.3, true, false, 1 } }, calls)
+
+        VehicleSync:deleteMap()
+        assert.is_nil(VehicleSyncHud.left)
+    end)
+
     it("implements the console commands", function()
         assert.contains(VehicleSync:consoleCommandSettings(), "maxSyncSpeed")
         assert.contains(VehicleSync:consoleCommandSet(nil, nil), "Usage")

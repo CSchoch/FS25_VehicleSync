@@ -52,7 +52,7 @@ describe("VehicleSyncSpec", function()
             assert.not_equals(nil, t.overwritten.updateVehiclePhysics)
             assert.not_equals(nil, t.overwritten.setSteeringInput)
             assert.not_equals(nil, t.overwritten.setCruiseControlState)
-            for _, name in ipairs({ "onLoad", "onDelete", "onUpdate", "onDraw", "onDrawUIInfo", "onReadStream", "onWriteStream",
+            for _, name in ipairs({ "onLoad", "onDelete", "onUpdate", "onDrawUIInfo", "onReadStream", "onWriteStream",
                 "onReadUpdateStream", "onWriteUpdateStream", "onRegisterActionEvents", "saveToXMLFile" }) do
                 assert.equals(Spec, t.listeners[name], name)
             end
@@ -193,10 +193,6 @@ describe("VehicleSyncSpec", function()
             assert.equals("Connected", Spec.getStateText(STATE.CONNECTED))
             assert.equals("Acquiring", Spec.getStateText(STATE.ACQUIRING))
             assert.equals("Tracking", Spec.getStateText(STATE.TRACKING))
-        end)
-        it("formats lateral offsets per side", function()
-            assert.equals("7.00 m left", Spec.formatLateral(7))
-            assert.equals("6.50 m right", Spec.formatLateral(-6.5))
         end)
     end)
 

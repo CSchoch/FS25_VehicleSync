@@ -11,11 +11,12 @@
 <![CDATA[Vehicle Sync lets a harvester take over the speed and steering of a tractor with a grain cart, so you can unload on the go - just like the machine synchronisation systems used on modern farms. It is made for multiplayer: one player drives the harvester, another one sits in the tractor.
 
 HOW IT WORKS:
-1. Harvester driver: open the sync network of the harvester (Left Alt + N).
-2. Tractor driver: drive close to the harvester and join its network (Left Alt + J).
-3. Tractor driver: move into the operational zone beside / behind the harvester and engage the sync (Left Alt + M) while the harvester is moving.
-4. The tractor now steers and matches its speed on its own and brings the grain cart right below the pipe outlet (home point). The status is shown in the F1 help box: Connected - Acquiring - Tracking.
-5. Harvester driver: nudge the cart forward, back, left or right to fill it evenly (Left Alt + arrow keys), or release it (Left Alt + R).
+Everything is operated in the Vehicle Sync terminal: press Left Alt + Y in the vehicle to open it and click its buttons.
+1. Harvester driver: open the sync network of the harvester (Open network).
+2. Tractor driver: drive close to the harvester and join its network (Join network). The terminal shows the nearest open network and its distance.
+3. Tractor driver: move into the operational zone beside / behind the harvester and click Engage while the harvester is moving.
+4. The tractor now steers and matches its speed on its own and brings the grain cart right below the pipe outlet (home point). The terminal shows the state (Connected - Acquiring - Tracking), the cart fill level and a top view of harvester, operational zone, home point and cart.
+5. Harvester driver: nudge the cart forward, back, left or right with the arrow buttons to fill it evenly, or release it (Release cart).
 
 TAKING OVER:
 The tractor driver stays in control at all times. Steering, accelerating, braking or switching on the cruise control ends the sync immediately. When you take over by steering, the tractor keeps the harvester's speed on cruise control so the cart does not brake hard below the pipe.
@@ -25,21 +26,17 @@ The sync also ends when:
 - the harvester turns sharply (e.g. headland turn) or the vehicles get too far apart
 - the grain cart is full
 - the tractor driver leaves the vehicle or the engine is off
-The tractor stays connected to the network, so you can re-engage with one key press.
+The tractor stays connected to the network, so you can re-engage with one click.
 
 HOME POINT:
-By default the cart is placed below the pipe outlet as soon as the pipe is unfolded. The tractor driver can store the current cart position as new home point (Left Alt + K); the home point is saved with the savegame. After the home point was set or nudged, it is shown for 5 seconds: a green ring on the ground and a line from the cart.
+By default the cart is placed below the pipe outlet as soon as the pipe is unfolded. The tractor driver can store the current cart position as new home point (Set home); the home point is saved with the savegame. After the home point was set or nudged, a green arrow high above it points at the new position for 5 seconds.
 
-HOTKEYS (keyboard defaults, can be changed in the Controls settings):
-Harvester (leader):
-- Left Alt + N: open / close sync network
-- Left Alt + Arrow Left / Right: nudge cart left / right
-- Left Alt + Arrow Up / Down: nudge cart forward / back
-- Left Alt + R: release cart
-Tractor (follower):
-- Left Alt + J: join / leave sync network
-- Left Alt + M: engage / disengage sync
-- Left Alt + K: set home point
+TERMINAL AND HOTKEYS:
+- Left Alt + Y: open the terminal with the mouse cursor; while it is open, bring the mouse cursor back
+- Right click: hide the mouse cursor (look around again), the terminal stays open
+- Drag the title bar to move the terminal, the position is kept
+- The X button in the title bar closes the terminal
+All other functions (open / close network, join / leave, engage / disengage, set home point, nudge, release) have no default key. They can be bound in the Controls settings under "Vehicle Sync".
 
 MULTIPLAYER:
 Everything is calculated on the server and synchronised to all players, including players joining a running game. Only vehicles of the same farm (or farms with access to each other) can sync. Only the player sitting in a vehicle can operate it.
@@ -51,11 +48,12 @@ vsSettings lists all settings, vsSet <name> <value> changes one, e.g. "vsSet max
 <![CDATA[Mit Fahrzeug Synchronisation übernimmt ein Drescher die Geschwindigkeit und Lenkung eines Traktors mit Überladewagen, damit während der Fahrt abgetankt werden kann - wie bei den Maschinen-Synchronisationssystemen moderner Betriebe. Der Mod ist für den Mehrspielermodus gemacht: ein Spieler fährt den Drescher, ein anderer sitzt im Traktor.
 
 SO FUNKTIONIERT ES:
-1. Drescherfahrer: Sync-Netzwerk des Dreschers öffnen (Linke Alt + N).
-2. Traktorfahrer: in die Nähe des Dreschers fahren und dem Netzwerk beitreten (Linke Alt + J).
-3. Traktorfahrer: in den Arbeitsbereich neben / hinter dem Drescher fahren und die Synchronisation aktivieren (Linke Alt + M), während der Drescher fährt.
-4. Der Traktor lenkt nun selbstständig, passt seine Geschwindigkeit an und bringt den Überladewagen genau unter das Rohrende (Heimposition). Der Status wird in der F1-Hilfe angezeigt: Verbunden - Annähern - Synchron.
-5. Drescherfahrer: Wagen nach vorne, hinten, links oder rechts versetzen, um ihn gleichmäßig zu befüllen (Linke Alt + Pfeiltasten), oder ihn freigeben (Linke Alt + R).
+Alles wird im Fahrzeug Sync Terminal bedient: im Fahrzeug Linke Alt + Y drücken, um es zu öffnen, und die Schaltflächen anklicken.
+1. Drescherfahrer: Sync-Netzwerk des Dreschers öffnen (Netzwerk öffnen).
+2. Traktorfahrer: in die Nähe des Dreschers fahren und dem Netzwerk beitreten (Netzwerk beitreten). Das Terminal zeigt das nächste offene Netzwerk und seine Entfernung.
+3. Traktorfahrer: in den Arbeitsbereich neben / hinter dem Drescher fahren und Aktivieren klicken, während der Drescher fährt.
+4. Der Traktor lenkt nun selbstständig, passt seine Geschwindigkeit an und bringt den Überladewagen genau unter das Rohrende (Heimposition). Das Terminal zeigt den Status (Verbunden - Annähern - Synchron), den Füllstand des Wagens und eine Draufsicht mit Drescher, Arbeitsbereich, Heimposition und Wagen.
+5. Drescherfahrer: Wagen mit den Pfeil-Schaltflächen nach vorne, hinten, links oder rechts versetzen, um ihn gleichmäßig zu befüllen, oder ihn freigeben (Wagen freigeben).
 
 ÜBERNEHMEN:
 Der Traktorfahrer behält jederzeit die Kontrolle. Lenken, Gas geben, Bremsen oder Einschalten des Tempomats beendet die Synchronisation sofort. Wird durch Lenken übernommen, hält der Traktor die Geschwindigkeit des Dreschers per Tempomat, damit der Wagen unter dem Rohr nicht stark abbremst.
@@ -65,21 +63,17 @@ Die Synchronisation endet außerdem, wenn:
 - der Drescher eng wendet (z. B. am Vorgewende) oder die Fahrzeuge zu weit auseinander sind
 - der Überladewagen voll ist
 - der Traktorfahrer aussteigt oder der Motor aus ist
-Der Traktor bleibt mit dem Netzwerk verbunden und kann per Tastendruck erneut synchronisiert werden.
+Der Traktor bleibt mit dem Netzwerk verbunden und kann per Klick erneut synchronisiert werden.
 
 HEIMPOSITION:
-Standardmäßig wird der Wagen unter das Rohrende gesetzt, sobald das Rohr ausgeklappt ist. Der Traktorfahrer kann die aktuelle Wagenposition als neue Heimposition speichern (Linke Alt + K); sie wird mit dem Spielstand gespeichert. Nach dem Setzen oder Versetzen wird die Heimposition 5 Sekunden lang angezeigt: ein grüner Ring am Boden und eine Linie vom Wagen.
+Standardmäßig wird der Wagen unter das Rohrende gesetzt, sobald das Rohr ausgeklappt ist. Der Traktorfahrer kann die aktuelle Wagenposition als neue Heimposition speichern (Heim setzen); sie wird mit dem Spielstand gespeichert. Nach dem Setzen oder Versetzen zeigt ein grüner Pfeil hoch über der Heimposition 5 Sekunden lang auf die neue Position.
 
-TASTENBELEGUNG (Tastatur-Standard, in den Steuerungseinstellungen änderbar):
-Drescher (Führungsfahrzeug):
-- Linke Alt + N: Sync-Netzwerk öffnen / schließen
-- Linke Alt + Pfeil Links / Rechts: Wagen nach links / rechts versetzen
-- Linke Alt + Pfeil Hoch / Runter: Wagen nach vorne / hinten versetzen
-- Linke Alt + R: Wagen freigeben
-Traktor (Folgefahrzeug):
-- Linke Alt + J: Sync-Netzwerk beitreten / verlassen
-- Linke Alt + M: Synchronisation aktivieren / beenden
-- Linke Alt + K: Heimposition setzen
+TERMINAL UND TASTENBELEGUNG:
+- Linke Alt + Y: Terminal mit Mauszeiger öffnen; ist es offen, den Mauszeiger zurückholen
+- Rechtsklick: Mauszeiger ausblenden (wieder umsehen), das Terminal bleibt offen
+- Die Titelleiste ziehen, um das Terminal zu verschieben; die Position bleibt erhalten
+- Die X-Schaltfläche in der Titelleiste schließt das Terminal
+Alle anderen Funktionen (Netzwerk öffnen / schließen, beitreten / verlassen, aktivieren / beenden, Heimposition setzen, versetzen, freigeben) haben keine Standardtaste. Sie können in den Steuerungseinstellungen unter "Fahrzeug Sync" belegt werden.
 
 MEHRSPIELER:
 Alles wird auf dem Server berechnet und mit allen Spielern synchronisiert, auch mit Spielern, die einem laufenden Spiel beitreten. Nur Fahrzeuge desselben Betriebs (oder von Betrieben mit gegenseitigem Zugriff) können sich synchronisieren. Nur der Spieler im Fahrzeug kann es bedienen.
@@ -100,12 +94,15 @@ vsSettings listet alle Einstellungen, vsSet <Name> <Wert> ändert eine, z. B. "v
         <sourceFile filename="src/VehicleSyncSettings.lua" />
         <sourceFile filename="src/network/VehicleSyncRequestEvent.lua" />
         <sourceFile filename="src/network/VehicleSyncStateEvent.lua" />
+        <sourceFile filename="src/hud/VehicleSyncHudLayout.lua" />
+        <sourceFile filename="src/hud/VehicleSyncHud.lua" />
         <sourceFile filename="src/VehicleSync.lua" />
     </extraSourceFiles>
 
     <l10n filenamePrefix="translations/translation" />
 
     <actions>
+        <action name="VS_TOGGLE_HUD" category="VEHICLE" />
         <action name="VS_TOGGLE_NETWORK" category="VEHICLE" />
         <action name="VS_CONNECT" category="VEHICLE" />
         <action name="VS_ENGAGE" category="VEHICLE" />
@@ -118,34 +115,11 @@ vsSettings listet alle Einstellungen, vsSet <Name> <Wert> ändert eine, z. B. "v
     </actions>
 
     <inputBinding>
-        <!-- Left Alt combos: Left Alt + S / G / B / H / W are already used by other installed mods, Left Alt + C / P by the base game,
-             plain letters collide with base game vehicle keys. -->
-        <actionBinding action="VS_TOGGLE_NETWORK">
-            <binding device="KB_MOUSE_DEFAULT" input="KEY_lalt KEY_n" />
-        </actionBinding>
-        <actionBinding action="VS_CONNECT">
-            <binding device="KB_MOUSE_DEFAULT" input="KEY_lalt KEY_j" />
-        </actionBinding>
-        <actionBinding action="VS_ENGAGE">
-            <binding device="KB_MOUSE_DEFAULT" input="KEY_lalt KEY_m" />
-        </actionBinding>
-        <actionBinding action="VS_SET_HOME">
-            <binding device="KB_MOUSE_DEFAULT" input="KEY_lalt KEY_k" />
-        </actionBinding>
-        <actionBinding action="VS_NUDGE_LEFT">
-            <binding device="KB_MOUSE_DEFAULT" input="KEY_lalt KEY_left" />
-        </actionBinding>
-        <actionBinding action="VS_NUDGE_RIGHT">
-            <binding device="KB_MOUSE_DEFAULT" input="KEY_lalt KEY_right" />
-        </actionBinding>
-        <actionBinding action="VS_NUDGE_FORWARD">
-            <binding device="KB_MOUSE_DEFAULT" input="KEY_lalt KEY_up" />
-        </actionBinding>
-        <actionBinding action="VS_NUDGE_BACK">
-            <binding device="KB_MOUSE_DEFAULT" input="KEY_lalt KEY_down" />
-        </actionBinding>
-        <actionBinding action="VS_RELEASE">
-            <binding device="KB_MOUSE_DEFAULT" input="KEY_lalt KEY_r" />
+        <!-- Only the terminal has a default key; every other action works from the terminal and can be
+             bound in the Controls settings. Left Alt + S / G / B / H / W / E are used by other installed
+             mods, Left Alt + C / P by the base game. -->
+        <actionBinding action="VS_TOGGLE_HUD">
+            <binding device="KB_MOUSE_DEFAULT" input="KEY_lalt KEY_y" />
         </actionBinding>
     </inputBinding>
 </modDesc>

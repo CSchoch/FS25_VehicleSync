@@ -134,7 +134,7 @@ describe("modDesc.xml", function()
             assert.is_not_nil(io.open(filename, "r"), filename)
             count = count + 1
         end
-        assert.equals(6, count)
+        assert.equals(8, count)
         assert.is_nil(modDesc:find("VehicleSyncSpec.lua\"", 1, true))
         assert.is_not_nil(io.open(VehicleSync and VehicleSync.SPEC_FILENAME or "src/VehicleSyncSpec.lua", "r"))
     end)
@@ -145,17 +145,13 @@ describe("modDesc.xml", function()
 end)
 
 describe("input bindings", function()
-    it("binds every action exactly once on the keyboard", function()
-        local map = bindings()
+    it("binds only the terminal by default, all other actions stay bindable in the controls", function()
         local list = actions()
-        assert.equals(9, #list)
-        local seenInputs = {}
-        for _, action in ipairs(list) do
-            assert.is_not_nil(map[action], "missing binding for " .. action)
-            assert.is_nil(seenInputs[map[action]], "duplicate key " .. map[action])
-            seenInputs[map[action]] = true
-            assert.is_not_nil(map[action]:match("^KEY_lalt "), action .. " should use a Left Alt combination")
-        end
+        assert.equals(10, #list)
+        assert.contains(list, "VS_TOGGLE_HUD")
+        assert.same({ VS_TOGGLE_HUD = "KEY_lalt KEY_y" }, bindings())
+        local _, count = modDesc:gsub("<actionBinding ", "")
+        assert.equals(1, count)
     end)
 
     it("avoids Left Alt combinations used by other installed mods and the base game", function()
@@ -175,21 +171,21 @@ describe("input bindings", function()
             assert.is_true(declared[action] == true, action .. " not declared in modDesc")
             used = used + 1
         end
-        assert.equals(9, used)
+        assert.equals(10, used)
     end)
 
     it("explains every hotkey in both descriptions (10.4)", function()
-        local keyNames = { KEY_n = "N", KEY_j = "J", KEY_m = "M", KEY_k = "K", KEY_r = "R" }
         for _, input in pairs(bindings()) do
-            local key = input:match("KEY_lalt (KEY_%w+)")
-            local letter = keyNames[key]
-            if letter ~= nil then
-                assert.contains(description("en"), "Left Alt + " .. letter)
-                assert.contains(description("de"), "Linke Alt + " .. letter)
-            end
+            local letter = input:match("^KEY_lalt KEY_(%a)$")
+            assert.is_not_nil(letter, input)
+            assert.contains(description("en"), "Left Alt + " .. letter:upper())
+            assert.contains(description("de"), "Linke Alt + " .. letter:upper())
         end
-        assert.contains(description("en"), "Arrow Left / Right")
-        assert.contains(description("de"), "Pfeil Links / Rechts")
+        -- the mouse controls of the terminal and where the unbound actions are found
+        assert.contains(description("en"), "Right click")
+        assert.contains(description("de"), "Rechtsklick")
+        assert.contains(description("en"), "Controls settings")
+        assert.contains(description("de"), "Steuerungseinstellungen")
     end)
 
     it("has an input text for every action in both languages", function()

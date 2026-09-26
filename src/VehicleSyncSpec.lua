@@ -33,10 +33,12 @@ VehicleSyncSpec.PIPE_MEASURE_INTERVAL = 500   -- ms between pipe offset measurem
 VehicleSyncSpec.PIPE_CHANGE_THRESHOLD = 0.2   -- m, pipe offset change that updates automatic home points
 VehicleSyncSpec.NOTIFICATION_DURATION = 3000  -- ms
 VehicleSyncSpec.HOME_MARKER_DURATION = 5000   -- ms the home point is shown after it changed
-VehicleSyncSpec.HOME_MARKER_RADIUS = 0.75     -- m, ring on the ground at the home point
-VehicleSyncSpec.HOME_MARKER_HEIGHT = 3        -- m, post above the ring
+VehicleSyncSpec.HOME_ARROW_TIP = 6           -- m above the terrain, clear of cart and pipe
+VehicleSyncSpec.HOME_ARROW_LENGTH = 3        -- m from the tip to the tail
+VehicleSyncSpec.HOME_ARROW_HEAD = 1          -- m, length of the arrow head
+VehicleSyncSpec.HOME_ARROW_WIDTH = 0.6       -- m, half width of the arrow head
+VehicleSyncSpec.HOME_ARROW_SHAFT = 0.08      -- m, spacing of the shaft lines
 VehicleSyncSpec.HOME_MARKER_COLOR = { 0.2, 1, 0.2 }
-VehicleSyncSpec.CART_MARKER_COLOR = { 1, 0.8, 0.2 }
 
 VehicleSyncSpec.ACTION = {
     TOGGLE_NETWORK = 1,
@@ -95,7 +97,6 @@ function VehicleSyncSpec.registerEventListeners(vehicleType)
     SpecializationUtil.registerEventListener(vehicleType, "onLoad", VehicleSyncSpec)
     SpecializationUtil.registerEventListener(vehicleType, "onDelete", VehicleSyncSpec)
     SpecializationUtil.registerEventListener(vehicleType, "onUpdate", VehicleSyncSpec)
-    SpecializationUtil.registerEventListener(vehicleType, "onDraw", VehicleSyncSpec)
     SpecializationUtil.registerEventListener(vehicleType, "onDrawUIInfo", VehicleSyncSpec)
     SpecializationUtil.registerEventListener(vehicleType, "onReadStream", VehicleSyncSpec)
     SpecializationUtil.registerEventListener(vehicleType, "onWriteStream", VehicleSyncSpec)
@@ -1123,6 +1124,9 @@ function VehicleSyncSpec:onRegisterActionEvents(isActiveForInput, isActiveForInp
         end
     end
 
+    -- the terminal (the only action with a default key)
+    add("VS_TOGGLE_HUD", VehicleSyncSpec.actionEventToggleHud, "vs_action_toggleHud", GS_PRIO_NORMAL)
+
     -- leader actions
     if spec.networkEnabled or self:vsGetHasPipe() then
         add("VS_TOGGLE_NETWORK", VehicleSyncSpec.actionEventToggleNetwork,
@@ -1146,6 +1150,10 @@ function VehicleSyncSpec:onRegisterActionEvents(isActiveForInput, isActiveForInp
             VehicleSyncController.isEngaged(spec.state) and "vs_action_disengage" or "vs_action_engage", GS_PRIO_HIGH)
         add("VS_SET_HOME", VehicleSyncSpec.actionEventSetHome, "vs_action_setHome", GS_PRIO_LOW)
     end
+end
+
+function VehicleSyncSpec.actionEventToggleHud(self, actionName, inputValue, callbackState, isAnalog)
+    VehicleSyncHud:toggle(self)
 end
 
 function VehicleSyncSpec.actionEventToggleNetwork(self, actionName, inputValue, callbackState, isAnalog)
@@ -1185,51 +1193,8 @@ function VehicleSyncSpec.actionEventRelease(self, actionName, inputValue, callba
 end
 
 -- ---------------------------------------------------------------------------
--- HUD
+-- Home point marker (the terminal itself is VehicleSyncHud)
 -- ---------------------------------------------------------------------------
-
----Formats a lateral offset as "3.50 m left" / "3.50 m right"
-function VehicleSyncSpec.formatLateral(x)
-    local key = x < 0 and "vs_hud_right" or "vs_hud_left"
-    return string.format(g_i18n:getText(key, VehicleSyncSpec.MOD_NAME), math.abs(x))
-end
-
----Lines shown in the F1 help box
----@return table lines
-function VehicleSyncSpec.getHudLines(vehicle)
-    local spec = VehicleSyncSpec.getSpec(vehicle)
-    local lines = {}
-    local modName = VehicleSyncSpec.MOD_NAME
-
-    if spec.state ~= STATE.IDLE then
-        local leader = vehicle:vsGetLeader()
-        local leaderName = leader ~= nil and leader:getName() or "-"
-        table.insert(lines, string.format(g_i18n:getText("vs_hud_follower", modName), VehicleSyncSpec.getStateText(spec.state), leaderName))
-        if spec.home ~= nil then
-            table.insert(lines, string.format(g_i18n:getText("vs_hud_home", modName), VehicleSyncSpec.formatLateral(spec.home.x), spec.home.z))
-        end
-        if VehicleSyncController.isEngaged(spec.state) then
-            table.insert(lines, string.format(g_i18n:getText("vs_hud_error", modName), spec.live.lateralError, spec.live.alongError))
-        elseif spec.live.inZone then
-            table.insert(lines, g_i18n:getText("vs_hud_inZone", modName))
-        end
-    end
-
-    if spec.networkEnabled then
-        local followers = vehicle:vsGetFollowers()
-        table.insert(lines, string.format(g_i18n:getText("vs_hud_leader", modName), #followers))
-        for _, follower in ipairs(followers) do
-            local followerSpec = VehicleSyncSpec.getSpec(follower)
-            local line = string.format("  %s: %s", follower:getName(), VehicleSyncSpec.getStateText(followerSpec.state))
-            if followerSpec.home ~= nil then
-                line = line .. string.format(" (%s, %.2f m)", VehicleSyncSpec.formatLateral(followerSpec.home.x), followerSpec.home.z)
-            end
-            table.insert(lines, line)
-        end
-    end
-
-    return lines
-end
 
 ---Shows the home point marker for HOME_MARKER_DURATION (called on every machine the change reaches)
 function VehicleSyncSpec.showHomeMarker(vehicle)
@@ -1247,9 +1212,9 @@ function VehicleSyncSpec.getIsHomeChange(oldHome, home, homeIsAuto, reason)
     return oldHome.x ~= home.x or oldHome.z ~= home.z
 end
 
----Draws the home point for a few seconds after it changed: a ring on the ground where the cart's fill
----point should be and a line from the cart's current fill point to it. Only the operators of the
----follower and of its leader see it. Called for every enterable vehicle by VehicleSystem:draw.
+---Draws the home point for a few seconds after it changed: an arrow high above the point where the
+---cart's fill point should be, pointing down at it. Only the operators of the follower and of its
+---leader see it. Called for every enterable vehicle by VehicleSystem:draw.
 function VehicleSyncSpec:onDrawUIInfo()
     local spec = VehicleSyncSpec.getSpec(self)
     if not self.isClient or spec.homeMarkerUntil == nil or spec.home == nil then
@@ -1267,25 +1232,27 @@ function VehicleSyncSpec:onDrawUIInfo()
         return
     end
 
-    local color = VehicleSyncSpec.HOME_MARKER_COLOR
-    local hx, _, hz = localToWorld(VehicleSyncSpec.getReferenceNode(leader), spec.home.x, 0, spec.home.z)
-    local hy = getTerrainHeightAtWorldPos(g_terrainNode, hx, 0, hz) + 0.1
-    DebugUtil.drawDebugCircle(hx, hy, hz, VehicleSyncSpec.HOME_MARKER_RADIUS, 24, color, true)
-    drawDebugLine(hx, hy, hz, color[1], color[2], color[3], hx, hy + VehicleSyncSpec.HOME_MARKER_HEIGHT, hz, color[1], color[2], color[3])
-
-    local receiver = VehicleSyncSpec.findReceiver(self)
-    if receiver ~= nil then
-        local cx, cy, cz = getWorldTranslation(receiver.node)
-        local cartColor = VehicleSyncSpec.CART_MARKER_COLOR
-        drawDebugLine(cx, cy, cz, cartColor[1], cartColor[2], cartColor[3], hx, hy + VehicleSyncSpec.HOME_MARKER_HEIGHT, hz, color[1], color[2], color[3])
-    end
+    local x, _, z = localToWorld(VehicleSyncSpec.getReferenceNode(leader), spec.home.x, 0, spec.home.z)
+    VehicleSyncSpec.drawArrow(x, getTerrainHeightAtWorldPos(g_terrainNode, x, 0, z) + VehicleSyncSpec.HOME_ARROW_TIP, z,
+        VehicleSyncSpec.HOME_MARKER_COLOR)
 end
 
-function VehicleSyncSpec:onDraw(isActiveForInput, isActiveForInputIgnoreSelection, isSelected)
-    if not self.isClient or self.getIsEntered == nil or not self:getIsEntered() then
-        return
+---Draws a downward arrow whose tip is at (x, tipY, z): a four sided head and a shaft of parallel lines
+function VehicleSyncSpec.drawArrow(x, tipY, z, color)
+    local r, g, b = color[1], color[2], color[3]
+    local headY = tipY + VehicleSyncSpec.HOME_ARROW_HEAD
+    local tailY = tipY + VehicleSyncSpec.HOME_ARROW_LENGTH
+    local width = VehicleSyncSpec.HOME_ARROW_WIDTH
+    local shaft = VehicleSyncSpec.HOME_ARROW_SHAFT
+
+    for _, offset in ipairs({ { 0, 0 }, { shaft, 0 }, { -shaft, 0 }, { 0, shaft }, { 0, -shaft } }) do
+        drawDebugLine(x + offset[1], headY, z + offset[2], r, g, b, x + offset[1], tailY, z + offset[2], r, g, b)
     end
-    for _, line in ipairs(VehicleSyncSpec.getHudLines(self)) do
-        g_currentMission:addExtraPrintText(line)
+
+    local corners = { { width, 0 }, { 0, width }, { -width, 0 }, { 0, -width } }
+    for i, corner in ipairs(corners) do
+        local nextCorner = corners[i % #corners + 1]
+        drawDebugLine(x, tipY, z, r, g, b, x + corner[1], headY, z + corner[2], r, g, b)
+        drawDebugLine(x + corner[1], headY, z + corner[2], r, g, b, x + nextCorner[1], headY, z + nextCorner[2], r, g, b)
     end
 end

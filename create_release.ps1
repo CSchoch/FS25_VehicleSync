@@ -5,7 +5,7 @@ param(
 
 # Only what the game needs goes into the archive (ModHub 7.5: only necessary files).
 # tests/, tools/, _art/, dist/ and the markdown files stay out.
-$include = @('modDesc.xml', 'icon_VehicleSync.dds', 'src', 'translations')
+$include = @('modDesc.xml', 'icon_VehicleSync.dds', 'src', 'textures', 'translations')
 $allowedExtensions = @('.lua', '.xml', '.dds')
 $srcLen = (Resolve-Path $Src).Path.TrimEnd('\').Length
 
