@@ -192,6 +192,97 @@ describe("VehicleSyncSpec input and HUD", function()
                 "  Tractor: Connected (7.00 m left, 2.00 m)",
             }, lines)
         end)
+        describe("home point marker", function()
+            local function connected(opts)
+                local leader, follower = V.createScene(opts)
+                leader:vsSetNetworkEnabled(true)
+                Spec.handleRequest(follower, ACTION.TOGGLE_CONNECT, 0, nil)
+                return leader, follower
+            end
+            local function near(a, b) return math.abs(a - b) < 1e-6 end
+
+            it("shows the home point for 5 seconds after it was set", function()
+                local _, follower = connected()
+                Spec.getSpec(follower).live.inZone = true
+                Spec.handleRequest(follower, ACTION.SET_HOME, 0, nil)
+                follower:onDrawUIInfo()
+                local circle = engine.drawn.circles[1]
+                assert.is_not_nil(circle)
+                local home = follower:vsGetHome()
+                assert.is_true(near(home.x, circle.x) and near(home.z, circle.z))
+                assert.same(Spec.HOME_MARKER_COLOR, circle.color)
+                -- post above the ring and the line from the cart's fill point
+                assert.equals(2, #engine.drawn.lines)
+                local cartX, _, cartZ = getWorldTranslation(follower.cart.rootNode)
+                assert.is_true(near(cartX, engine.drawn.lines[2].x1) and near(cartZ, engine.drawn.lines[2].z1))
+
+                g_time = Spec.HOME_MARKER_DURATION
+                engine.drawn.circles = {}
+                follower:onDrawUIInfo()
+                assert.equals(1, #engine.drawn.circles)
+                g_time = Spec.HOME_MARKER_DURATION + 1
+                engine.drawn.circles = {}
+                follower:onDrawUIInfo()
+                follower:onDrawUIInfo()
+                assert.equals(0, #engine.drawn.circles)
+                assert.is_nil(Spec.getSpec(follower).homeMarkerUntil)
+            end)
+            it("shows the home point to the leader operator after a nudge", function()
+                local leader, follower = connected({ leaderEntered = true, followerEntered = false })
+                Spec.handleRequest(leader, ACTION.NUDGE, NUDGE.FORWARD, nil)
+                follower:onDrawUIInfo()
+                assert.equals(1, #engine.drawn.circles)
+            end)
+            it("draws only the ring without a cart", function()
+                local _, follower = connected()
+                follower.childVehicles = { follower }
+                Spec.showHomeMarker(follower)
+                follower:onDrawUIInfo()
+                assert.equals(1, #engine.drawn.circles)
+                assert.equals(1, #engine.drawn.lines)
+            end)
+            it("shows nothing without a change, to other players, in menus or on servers", function()
+                local leader, follower = connected()
+                follower:onDrawUIInfo()
+                Spec.showHomeMarker(follower)
+                follower.entered = false
+                follower:onDrawUIInfo()
+                follower.entered = true
+                g_gui.visible = true
+                follower:onDrawUIInfo()
+                g_gui.visible = false
+                g_noHudModeEnabled = true
+                follower:onDrawUIInfo()
+                g_noHudModeEnabled = false
+                follower.isClient = false
+                follower:onDrawUIInfo()
+                follower.isClient = true
+                Spec.getSpec(follower).leader = nil
+                follower:onDrawUIInfo()
+                assert.equals(0, #engine.drawn.circles)
+                local v = V.create({ entered = true })
+                Spec.showHomeMarker(v)
+                v:onDrawUIInfo()
+                assert.equals(0, #engine.drawn.circles)
+            end)
+            it("detects home point changes received from the server", function()
+                local REASON = VehicleSyncController.REASON
+                local home = { x = 7, z = 2 }
+                assert.is_true(Spec.getIsHomeChange(home, home, false, REASON.HOME_SET))
+                assert.is_true(Spec.getIsHomeChange(home, { x = 7, z = 2.5 }, false, REASON.NONE))
+                assert.is_true(Spec.getIsHomeChange(home, { x = 6.5, z = 2 }, false, REASON.NONE))
+                assert.is_false(Spec.getIsHomeChange(home, { x = 7, z = 2 }, false, REASON.NONE))
+                assert.is_false(Spec.getIsHomeChange(home, { x = 8, z = 2 }, true, REASON.NONE))
+                assert.is_false(Spec.getIsHomeChange(nil, home, false, REASON.NONE))
+                assert.is_false(Spec.getIsHomeChange(home, nil, true, REASON.NONE))
+
+                local _, follower = connected()
+                Spec.getSpec(follower).homeMarkerUntil = nil
+                g_time = 1000
+                follower:vsApplyState(STATE.CONNECTED, follower:vsGetLeader(), { x = 5, z = 1 }, false, false, REASON.NONE)
+                assert.equals(1000 + Spec.HOME_MARKER_DURATION, Spec.getSpec(follower).homeMarkerUntil)
+            end)
+        end)
         it("skips deleted followers in the leader list", function()
             local leader, follower = V.createScene()
             leader:vsSetNetworkEnabled(true)

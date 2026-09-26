@@ -52,7 +52,7 @@ describe("VehicleSyncSpec", function()
             assert.not_equals(nil, t.overwritten.updateVehiclePhysics)
             assert.not_equals(nil, t.overwritten.setSteeringInput)
             assert.not_equals(nil, t.overwritten.setCruiseControlState)
-            for _, name in ipairs({ "onLoad", "onDelete", "onUpdate", "onDraw", "onReadStream", "onWriteStream",
+            for _, name in ipairs({ "onLoad", "onDelete", "onUpdate", "onDraw", "onDrawUIInfo", "onReadStream", "onWriteStream",
                 "onReadUpdateStream", "onWriteUpdateStream", "onRegisterActionEvents", "saveToXMLFile" }) do
                 assert.equals(Spec, t.listeners[name], name)
             end

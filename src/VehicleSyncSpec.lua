@@ -32,6 +32,11 @@ VehicleSyncSpec.LIVE_UPDATE_INTERVAL = 250    -- ms between HUD value updates se
 VehicleSyncSpec.PIPE_MEASURE_INTERVAL = 500   -- ms between pipe offset measurements
 VehicleSyncSpec.PIPE_CHANGE_THRESHOLD = 0.2   -- m, pipe offset change that updates automatic home points
 VehicleSyncSpec.NOTIFICATION_DURATION = 3000  -- ms
+VehicleSyncSpec.HOME_MARKER_DURATION = 5000   -- ms the home point is shown after it changed
+VehicleSyncSpec.HOME_MARKER_RADIUS = 0.75     -- m, ring on the ground at the home point
+VehicleSyncSpec.HOME_MARKER_HEIGHT = 3        -- m, post above the ring
+VehicleSyncSpec.HOME_MARKER_COLOR = { 0.2, 1, 0.2 }
+VehicleSyncSpec.CART_MARKER_COLOR = { 1, 0.8, 0.2 }
 
 VehicleSyncSpec.ACTION = {
     TOGGLE_NETWORK = 1,
@@ -91,6 +96,7 @@ function VehicleSyncSpec.registerEventListeners(vehicleType)
     SpecializationUtil.registerEventListener(vehicleType, "onDelete", VehicleSyncSpec)
     SpecializationUtil.registerEventListener(vehicleType, "onUpdate", VehicleSyncSpec)
     SpecializationUtil.registerEventListener(vehicleType, "onDraw", VehicleSyncSpec)
+    SpecializationUtil.registerEventListener(vehicleType, "onDrawUIInfo", VehicleSyncSpec)
     SpecializationUtil.registerEventListener(vehicleType, "onReadStream", VehicleSyncSpec)
     SpecializationUtil.registerEventListener(vehicleType, "onWriteStream", VehicleSyncSpec)
     SpecializationUtil.registerEventListener(vehicleType, "onReadUpdateStream", VehicleSyncSpec)
@@ -294,6 +300,7 @@ function VehicleSyncSpec:onLoad(savegame)
     spec.lastReason = REASON.NONE
     spec.actionEvents = {}
     spec.takeoverRequested = false
+    spec.homeMarkerUntil = nil
 
     spec.dirtyFlag = self:getNextDirtyFlag()
     spec.live = { lateralError = 0, alongError = 0, inZone = false }
@@ -411,6 +418,7 @@ function VehicleSyncSpec:vsApplyState(state, leader, home, homeIsAuto, networkEn
     local oldState = spec.state
     local oldLeader = spec.leader
     local oldNetwork = spec.networkEnabled
+    local oldHome = spec.home
 
     if state == STATE.IDLE then
         leader = nil
@@ -450,6 +458,10 @@ function VehicleSyncSpec:vsApplyState(state, leader, home, homeIsAuto, networkEn
 
     if reason ~= REASON.NONE then
         self:vsShowReason(reason)
+    end
+
+    if VehicleSyncSpec.getIsHomeChange(oldHome, home, homeIsAuto, reason) then
+        VehicleSyncSpec.showHomeMarker(self)
     end
 
     if oldState ~= state or oldNetwork ~= networkEnabled or oldLeader ~= leader then
@@ -785,6 +797,7 @@ function VehicleSyncSpec.trySetHome(vehicle, settings, connection)
     spec.homeIsAuto = false
     spec.lastReason = REASON.HOME_SET
     vehicle:vsShowReason(REASON.HOME_SET)
+    VehicleSyncSpec.showHomeMarker(vehicle)
     VehicleSyncSpec.broadcastState(vehicle)
     return true
 end
@@ -819,6 +832,7 @@ function VehicleSyncSpec.nudge(leader, direction, settings, connection)
     spec.home = VehicleSyncController.applyNudge(spec.home, direction, VehicleSyncSpec.getWidth(leader), cartWidth, settings)
     spec.homeIsAuto = false
     spec.lastReason = REASON.NONE
+    VehicleSyncSpec.showHomeMarker(target)
     VehicleSyncSpec.broadcastState(target)
     return true
 end
@@ -1215,6 +1229,56 @@ function VehicleSyncSpec.getHudLines(vehicle)
     end
 
     return lines
+end
+
+---Shows the home point marker for HOME_MARKER_DURATION (called on every machine the change reaches)
+function VehicleSyncSpec.showHomeMarker(vehicle)
+    VehicleSyncSpec.getSpec(vehicle).homeMarkerUntil = g_time + VehicleSyncSpec.HOME_MARKER_DURATION
+end
+
+---True if a changed home point should be shown: set by the operator, or moved by a nudge
+function VehicleSyncSpec.getIsHomeChange(oldHome, home, homeIsAuto, reason)
+    if reason == REASON.HOME_SET then
+        return true
+    end
+    if home == nil or homeIsAuto or oldHome == nil then
+        return false
+    end
+    return oldHome.x ~= home.x or oldHome.z ~= home.z
+end
+
+---Draws the home point for a few seconds after it changed: a ring on the ground where the cart's fill
+---point should be and a line from the cart's current fill point to it. Only the operators of the
+---follower and of its leader see it. Called for every enterable vehicle by VehicleSystem:draw.
+function VehicleSyncSpec:onDrawUIInfo()
+    local spec = VehicleSyncSpec.getSpec(self)
+    if not self.isClient or spec.homeMarkerUntil == nil or spec.home == nil then
+        return
+    end
+    if g_time > spec.homeMarkerUntil then
+        spec.homeMarkerUntil = nil
+        return
+    end
+    local leader = self:vsGetLeader()
+    if not VehicleSyncSpec.isValidVehicle(leader) or not (self:getIsEntered() or leader:getIsEntered()) then
+        return
+    end
+    if g_gui:getIsGuiVisible() or g_noHudModeEnabled then
+        return
+    end
+
+    local color = VehicleSyncSpec.HOME_MARKER_COLOR
+    local hx, _, hz = localToWorld(VehicleSyncSpec.getReferenceNode(leader), spec.home.x, 0, spec.home.z)
+    local hy = getTerrainHeightAtWorldPos(g_terrainNode, hx, 0, hz) + 0.1
+    DebugUtil.drawDebugCircle(hx, hy, hz, VehicleSyncSpec.HOME_MARKER_RADIUS, 24, color, true)
+    drawDebugLine(hx, hy, hz, color[1], color[2], color[3], hx, hy + VehicleSyncSpec.HOME_MARKER_HEIGHT, hz, color[1], color[2], color[3])
+
+    local receiver = VehicleSyncSpec.findReceiver(self)
+    if receiver ~= nil then
+        local cx, cy, cz = getWorldTranslation(receiver.node)
+        local cartColor = VehicleSyncSpec.CART_MARKER_COLOR
+        drawDebugLine(cx, cy, cz, cartColor[1], cartColor[2], cartColor[3], hx, hy + VehicleSyncSpec.HOME_MARKER_HEIGHT, hz, color[1], color[2], color[3])
+    end
 end
 
 function VehicleSyncSpec:onDraw(isActiveForInput, isActiveForInputIgnoreSelection, isSelected)

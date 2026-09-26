@@ -28,7 +28,7 @@ The sync also ends when:
 The tractor stays connected to the network, so you can re-engage with one key press.
 
 HOME POINT:
-By default the cart is placed below the pipe outlet as soon as the pipe is unfolded. The tractor driver can store the current cart position as new home point (Left Alt + K); the home point is saved with the savegame.
+By default the cart is placed below the pipe outlet as soon as the pipe is unfolded. The tractor driver can store the current cart position as new home point (Left Alt + K); the home point is saved with the savegame. After the home point was set or nudged, it is shown for 5 seconds: a green ring on the ground and a line from the cart.
 
 HOTKEYS (keyboard defaults, can be changed in the Controls settings):
 Harvester (leader):
@@ -68,7 +68,7 @@ Die Synchronisation endet außerdem, wenn:
 Der Traktor bleibt mit dem Netzwerk verbunden und kann per Tastendruck erneut synchronisiert werden.
 
 HEIMPOSITION:
-Standardmäßig wird der Wagen unter das Rohrende gesetzt, sobald das Rohr ausgeklappt ist. Der Traktorfahrer kann die aktuelle Wagenposition als neue Heimposition speichern (Linke Alt + K); sie wird mit dem Spielstand gespeichert.
+Standardmäßig wird der Wagen unter das Rohrende gesetzt, sobald das Rohr ausgeklappt ist. Der Traktorfahrer kann die aktuelle Wagenposition als neue Heimposition speichern (Linke Alt + K); sie wird mit dem Spielstand gespeichert. Nach dem Setzen oder Versetzen wird die Heimposition 5 Sekunden lang angezeigt: ein grüner Ring am Boden und eine Linie vom Wagen.
 
 TASTENBELEGUNG (Tastatur-Standard, in den Steuerungseinstellungen änderbar):
 Drescher (Führungsfahrzeug):

@@ -92,6 +92,21 @@ function Utils.prependedFunction(original, prepended)
     end
 end
 
+-- world drawing: circles and lines are recorded
+M.drawn = { circles = {}, lines = {} }
+g_time = 0
+g_terrainNode = 1
+g_gui = { visible = false, getIsGuiVisible = function(self) return self.visible end }
+g_noHudModeEnabled = false
+function getTerrainHeightAtWorldPos(terrainNode, x, y, z) return 0 end
+DebugUtil = {}
+function DebugUtil.drawDebugCircle(x, y, z, radius, steps, color, alignToTerrain)
+    table.insert(M.drawn.circles, { x = x, y = y, z = z, radius = radius, color = color })
+end
+function drawDebugLine(x1, y1, z1, r1, g1, b1, x2, y2, z2, r2, g2, b2)
+    table.insert(M.drawn.lines, { x1 = x1, y1 = y1, z1 = z1, x2 = x2, y2 = y2, z2 = z2, color = { r1, g1, b1 } })
+end
+
 GS_PRIO_VERY_HIGH, GS_PRIO_HIGH, GS_PRIO_NORMAL, GS_PRIO_LOW, GS_PRIO_VERY_LOW = 1, 2, 3, 4, 5
 
 InputAction = {}
@@ -164,6 +179,12 @@ function localDirectionToWorld(node, dx, dy, dz)
     local _, _, h = M.getWorldPose(node)
     local cosH, sinH = math.cos(h), math.sin(h)
     return dx * cosH + dz * sinH, dy, -dx * sinH + dz * cosH
+end
+
+function localToWorld(node, x, y, z)
+    local px, pz, ph = M.getWorldPose(node)
+    local cosH, sinH = math.cos(ph), math.sin(ph)
+    return px + x * cosH + z * sinH, y, pz - x * sinH + z * cosH
 end
 
 function localToLocal(nodeA, nodeB, x, y, z)
@@ -365,6 +386,10 @@ function M.reset()
     Logging.calls = { error = {}, warning = {}, info = {} }
     g_inputBinding.texts = {}
     g_inputBinding.priorities = {}
+    M.drawn = { circles = {}, lines = {} }
+    g_time = 0
+    g_gui.visible = false
+    g_noHudModeEnabled = false
     Vehicle.xmlSchemaSavegame.registered = {}
 end
 

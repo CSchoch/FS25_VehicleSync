@@ -158,9 +158,9 @@ describe("input bindings", function()
         end
     end)
 
-    it("avoids Left Alt combinations used by other installed mods", function()
+    it("avoids Left Alt combinations used by other installed mods and the base game", function()
         for _, input in pairs(bindings()) do
-            for _, taken in ipairs({ "KEY_lalt KEY_s", "KEY_lalt KEY_g", "KEY_lalt KEY_b", "KEY_lalt KEY_h", "KEY_lalt KEY_w", "KEY_lalt KEY_e" }) do
+            for _, taken in ipairs({ "KEY_lalt KEY_s", "KEY_lalt KEY_g", "KEY_lalt KEY_b", "KEY_lalt KEY_h", "KEY_lalt KEY_w", "KEY_lalt KEY_e", "KEY_lalt KEY_c", "KEY_lalt KEY_p" }) do
                 assert.not_equals(taken, input)
             end
         end
@@ -179,7 +179,7 @@ describe("input bindings", function()
     end)
 
     it("explains every hotkey in both descriptions (10.4)", function()
-        local keyNames = { KEY_n = "N", KEY_c = "C", KEY_m = "M", KEY_p = "P", KEY_r = "R" }
+        local keyNames = { KEY_n = "N", KEY_j = "J", KEY_m = "M", KEY_k = "K", KEY_r = "R" }
         for _, input in pairs(bindings()) do
             local key = input:match("KEY_lalt (KEY_%w+)")
             local letter = keyNames[key]
