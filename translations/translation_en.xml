@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<l10n>
+    <texts>
+        <text name="input_VS_TOGGLE_NETWORK" text="Vehicle Sync: Open / close sync network"/>
+        <text name="input_VS_CONNECT" text="Vehicle Sync: Join / leave sync network"/>
+        <text name="input_VS_ENGAGE" text="Vehicle Sync: Engage / disengage sync"/>
+        <text name="input_VS_SET_HOME" text="Vehicle Sync: Set home point"/>
+        <text name="input_VS_NUDGE_LEFT" text="Vehicle Sync: Nudge cart left"/>
+        <text name="input_VS_NUDGE_RIGHT" text="Vehicle Sync: Nudge cart right"/>
+        <text name="input_VS_NUDGE_FORWARD" text="Vehicle Sync: Nudge cart forward"/>
+        <text name="input_VS_NUDGE_BACK" text="Vehicle Sync: Nudge cart back"/>
+        <text name="input_VS_RELEASE" text="Vehicle Sync: Release cart"/>
+        <text name="vs_action_openNetwork" text="Open sync network"/>
+        <text name="vs_action_closeNetwork" text="Close sync network"/>
+        <text name="vs_action_connect" text="Join sync network"/>
+        <text name="vs_action_disconnect" text="Leave sync network"/>
+        <text name="vs_action_engage" text="Engage sync"/>
+        <text name="vs_action_disengage" text="Disengage sync"/>
+        <text name="vs_action_setHome" text="Set home point"/>
+        <text name="vs_action_nudgeLeft" text="Nudge cart left"/>
+        <text name="vs_action_nudgeRight" text="Nudge cart right"/>
+        <text name="vs_action_nudgeForward" text="Nudge cart forward"/>
+        <text name="vs_action_nudgeBack" text="Nudge cart back"/>
+        <text name="vs_action_release" text="Release cart"/>
+        <text name="vs_state_idle" text="Off"/>
+        <text name="vs_state_connected" text="Connected"/>
+        <text name="vs_state_acquiring" text="Acquiring"/>
+        <text name="vs_state_tracking" text="Tracking"/>
+        <text name="vs_network_opened" text="Sync network opened"/>
+        <text name="vs_network_closed" text="Sync network closed"/>
+        <text name="vs_hud_follower" text="Vehicle Sync: %s - %s"/>
+        <text name="vs_hud_home" text="Home point: %s, %.2f m fore/aft"/>
+        <text name="vs_hud_left" text="%.2f m left"/>
+        <text name="vs_hud_right" text="%.2f m right"/>
+        <text name="vs_hud_error" text="Deviation: %.2f m lateral, %.2f m fore/aft"/>
+        <text name="vs_hud_inZone" text="In the operational zone - sync can be engaged"/>
+        <text name="vs_hud_leader" text="Sync network open - carts: %d"/>
+        <text name="vs_reason_connected" text="Connected to the sync network"/>
+        <text name="vs_reason_disconnected" text="Left the sync network"/>
+        <text name="vs_reason_engaged" text="Sync engaged"/>
+        <text name="vs_reason_disengaged" text="Sync disengaged"/>
+        <text name="vs_reason_operator_steering" text="Sync ended: operator steered"/>
+        <text name="vs_reason_operator_pedal" text="Sync ended: operator used the pedals"/>
+        <text name="vs_reason_operator_cruise" text="Sync ended: cruise control switched on"/>
+        <text name="vs_reason_leader_stopped" text="Sync ended: harvester stopped"/>
+        <text name="vs_reason_leader_too_fast" text="Sync ended: harvester too fast"/>
+        <text name="vs_reason_leader_turning" text="Sync ended: harvester turning"/>
+        <text name="vs_reason_leader_reversing" text="Sync ended: harvester reversing"/>
+        <text name="vs_reason_position_lost" text="Sync ended: too far away from the home point"/>
+        <text name="vs_reason_out_of_range" text="Out of range of the sync network"/>
+        <text name="vs_reason_leader_lost" text="Sync network lost"/>
+        <text name="vs_reason_cart_full" text="Grain cart is full"/>
+        <text name="vs_reason_operator_left" text="Operator is not in control of the tractor"/>
+        <text name="vs_reason_released_by_leader" text="Cart released by the harvester"/>
+        <text name="vs_reason_network_closed" text="Sync network is closed"/>
+        <text name="vs_reason_not_in_zone" text="Not in the operational zone of the harvester"/>
+        <text name="vs_reason_no_leader" text="No sync partner available"/>
+        <text name="vs_reason_leader_busy" text="Harvester is already synced with another cart"/>
+        <text name="vs_reason_not_allowed" text="No access to this vehicle"/>
+        <text name="vs_reason_home_set" text="Home point saved"/>
+        <text name="vs_reason_leader_speed_window" text="Harvester speed is outside the sync range"/>
+        <text name="vs_reason_motor_off" text="Engine is off"/>
+    </texts>
+</l10n>

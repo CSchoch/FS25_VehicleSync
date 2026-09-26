@@ -1,0 +1,8 @@
+dist/
+tests/coverage_report.txt
+
+# IDE / OS
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

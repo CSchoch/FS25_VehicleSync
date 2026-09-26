@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<l10n>
+    <texts>
+        <text name="input_VS_TOGGLE_NETWORK" text="Fahrzeug Sync: Sync-Netzwerk öffnen / schließen"/>
+        <text name="input_VS_CONNECT" text="Fahrzeug Sync: Sync-Netzwerk beitreten / verlassen"/>
+        <text name="input_VS_ENGAGE" text="Fahrzeug Sync: Synchronisation aktivieren / beenden"/>
+        <text name="input_VS_SET_HOME" text="Fahrzeug Sync: Heimposition setzen"/>
+        <text name="input_VS_NUDGE_LEFT" text="Fahrzeug Sync: Wagen nach links versetzen"/>
+        <text name="input_VS_NUDGE_RIGHT" text="Fahrzeug Sync: Wagen nach rechts versetzen"/>
+        <text name="input_VS_NUDGE_FORWARD" text="Fahrzeug Sync: Wagen nach vorne versetzen"/>
+        <text name="input_VS_NUDGE_BACK" text="Fahrzeug Sync: Wagen nach hinten versetzen"/>
+        <text name="input_VS_RELEASE" text="Fahrzeug Sync: Wagen freigeben"/>
+        <text name="vs_action_openNetwork" text="Sync-Netzwerk öffnen"/>
+        <text name="vs_action_closeNetwork" text="Sync-Netzwerk schließen"/>
+        <text name="vs_action_connect" text="Sync-Netzwerk beitreten"/>
+        <text name="vs_action_disconnect" text="Sync-Netzwerk verlassen"/>
+        <text name="vs_action_engage" text="Synchronisation aktivieren"/>
+        <text name="vs_action_disengage" text="Synchronisation beenden"/>
+        <text name="vs_action_setHome" text="Heimposition setzen"/>
+        <text name="vs_action_nudgeLeft" text="Wagen nach links"/>
+        <text name="vs_action_nudgeRight" text="Wagen nach rechts"/>
+        <text name="vs_action_nudgeForward" text="Wagen nach vorne"/>
+        <text name="vs_action_nudgeBack" text="Wagen nach hinten"/>
+        <text name="vs_action_release" text="Wagen freigeben"/>
+        <text name="vs_state_idle" text="Aus"/>
+        <text name="vs_state_connected" text="Verbunden"/>
+        <text name="vs_state_acquiring" text="Annähern"/>
+        <text name="vs_state_tracking" text="Synchron"/>
+        <text name="vs_network_opened" text="Sync-Netzwerk geöffnet"/>
+        <text name="vs_network_closed" text="Sync-Netzwerk geschlossen"/>
+        <text name="vs_hud_follower" text="Fahrzeug Sync: %s - %s"/>
+        <text name="vs_hud_home" text="Heimposition: %s, %.2f m vor/zurück"/>
+        <text name="vs_hud_left" text="%.2f m links"/>
+        <text name="vs_hud_right" text="%.2f m rechts"/>
+        <text name="vs_hud_error" text="Abweichung: %.2f m seitlich, %.2f m vor/zurück"/>
+        <text name="vs_hud_inZone" text="Im Arbeitsbereich - Synchronisation möglich"/>
+        <text name="vs_hud_leader" text="Sync-Netzwerk offen - Wagen: %d"/>
+        <text name="vs_reason_connected" text="Mit dem Sync-Netzwerk verbunden"/>
+        <text name="vs_reason_disconnected" text="Sync-Netzwerk verlassen"/>
+        <text name="vs_reason_engaged" text="Synchronisation aktiviert"/>
+        <text name="vs_reason_disengaged" text="Synchronisation beendet"/>
+        <text name="vs_reason_operator_steering" text="Synchronisation beendet: Fahrer hat gelenkt"/>
+        <text name="vs_reason_operator_pedal" text="Synchronisation beendet: Fahrer hat Gas gegeben oder gebremst"/>
+        <text name="vs_reason_operator_cruise" text="Synchronisation beendet: Tempomat eingeschaltet"/>
+        <text name="vs_reason_leader_stopped" text="Synchronisation beendet: Drescher steht"/>
+        <text name="vs_reason_leader_too_fast" text="Synchronisation beendet: Drescher zu schnell"/>
+        <text name="vs_reason_leader_turning" text="Synchronisation beendet: Drescher wendet"/>
+        <text name="vs_reason_leader_reversing" text="Synchronisation beendet: Drescher fährt rückwärts"/>
+        <text name="vs_reason_position_lost" text="Synchronisation beendet: zu weit von der Heimposition entfernt"/>
+        <text name="vs_reason_out_of_range" text="Außerhalb der Reichweite des Sync-Netzwerks"/>
+        <text name="vs_reason_leader_lost" text="Sync-Netzwerk verloren"/>
+        <text name="vs_reason_cart_full" text="Überladewagen ist voll"/>
+        <text name="vs_reason_operator_left" text="Der Fahrer steuert den Traktor nicht"/>
+        <text name="vs_reason_released_by_leader" text="Wagen vom Drescher freigegeben"/>
+        <text name="vs_reason_network_closed" text="Sync-Netzwerk ist geschlossen"/>
+        <text name="vs_reason_not_in_zone" text="Nicht im Arbeitsbereich des Dreschers"/>
+        <text name="vs_reason_no_leader" text="Kein Sync-Partner verfügbar"/>
+        <text name="vs_reason_leader_busy" text="Drescher ist bereits mit einem anderen Wagen synchronisiert"/>
+        <text name="vs_reason_not_allowed" text="Kein Zugriff auf dieses Fahrzeug"/>
+        <text name="vs_reason_home_set" text="Heimposition gespeichert"/>
+        <text name="vs_reason_leader_speed_window" text="Geschwindigkeit des Dreschers außerhalb des Sync-Bereichs"/>
+        <text name="vs_reason_motor_off" text="Motor ist aus"/>
+    </texts>
+</l10n>
