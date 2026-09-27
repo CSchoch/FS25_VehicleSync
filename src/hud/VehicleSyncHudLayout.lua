@@ -14,6 +14,7 @@
 VehicleSyncHudLayout = {}
 
 local STATE = VehicleSyncController.STATE
+local REASON = VehicleSyncController.REASON
 
 ---Converts a sRGB hex colour to the linear colour the engine expects
 ---@return table {r, g, b, a}
@@ -63,6 +64,7 @@ VehicleSyncHudLayout.SIZE = {
     BAND_BAR = 6,
     PLAN = 180,
     PLAN_EMPTY = 64,  -- plan view that only shows a message
+    BANNER = 26,      -- message banner across the top of the plan view
     READOUT = 24,
     BUTTON = 30,
     BUTTON_ICON = 18,
@@ -184,6 +186,17 @@ local function cartItem(home, live, state)
     }
 end
 
+---Engaged: a machine fault counts down (live.check) -> warning band and the fault instead of the deviation
+local function applyEngagedLive(view, live, getText)
+    if live.check == REASON.NONE then
+        view.readout = deviation(live, getText)
+        return
+    end
+    view.stateText = string.format(getText("vs_hud_ending"), math.ceil(live.abortRemaining / 1000))
+    view.stateColor = VehicleSyncHudLayout.COLOR.WARNING
+    view.readout = { message = getText(VehicleSyncController.getFaultTextKey(live.check)), warning = true }
+end
+
 local function button(getText, textKey, action, argument, enabled, icon)
     return { text = textKey ~= nil and getText(textKey) or nil, action = action, argument = argument or 0,
         enabled = enabled ~= false, icon = icon }
@@ -201,13 +214,21 @@ local function buildFollower(view, s, getText)
     if s.home ~= nil then
         table.insert(view.plan.carts, cartItem(s.home, s.live, s.state))
     end
+    -- the server's engage check (live.check) is the truth; before its first update only the zone is known
+    local canEngage = true
+    local check = s.live.check
     if engaged then
-        view.readout = deviation(s.live, getText)
-    else
+        applyEngagedLive(view, s.live, getText)
+    elseif check == REASON.ENGAGED then
+        view.readout = { message = getText("vs_hud_ready") }
+    elseif check == REASON.NONE then
         view.readout = { message = getText(s.live.inZone and "vs_hud_inZone" or "vs_hud_driveIntoZone") }
+    else
+        view.readout = { message = getText(VehicleSyncController.getReasonTextKey(check)) }
+        canEngage = false
     end
 
-    local engage = button(getText, engaged and "vs_button_disengage" or "vs_button_engage", "TOGGLE_ENGAGE")
+    local engage = button(getText, engaged and "vs_button_disengage" or "vs_button_engage", "TOGGLE_ENGAGE", 0, canEngage)
     engage.primary = true
     engage.color = engaged and color.WARNING or color.TRACKING
     view.buttonLayout = VehicleSyncHudLayout.BUTTONS.ROW
@@ -239,7 +260,7 @@ local function buildLeader(view, s, getText)
     view.plan.pipe = s.pipe
     view.plan.zoom = engaged ~= nil and VehicleSyncHudLayout.ZOOM.CLOSE or VehicleSyncHudLayout.ZOOM.ZONE
     if engaged ~= nil then
-        view.readout = deviation(engaged.live, getText)
+        applyEngagedLive(view, engaged.live, getText)
     else
         view.readout = { message = getText(count == 0 and "vs_hud_waiting" or "vs_hud_noneEngaged") }
     end
@@ -257,7 +278,7 @@ local function buildLeader(view, s, getText)
 end
 
 ---Builds what the terminal shows from a snapshot of the vehicle
--- snapshot: {role, state, stateText, partnerName, home, live {lateralError, alongError, inZone},
+-- snapshot: {role, state, stateText, partnerName, home, live {lateralError, alongError, inZone, check, abortRemaining},
 --            fillRatio, pipe {x, z}, followers {{state, home, live, fillRatio}}, nearest {name, distance}}
 ---@param getText function key -> localised text
 ---@return table view
@@ -276,15 +297,21 @@ function VehicleSyncHudLayout.buildView(s, getText)
         view.buttonLayout = VehicleSyncHudLayout.BUTTONS.SINGLE
         view.buttons = { button(getText, "vs_button_openNetwork", "TOGGLE_NETWORK") }
     else
+        -- the server's join check (live.check) decides; before its first update the nearest network counts
+        local check = s.live.check
         view.stateText = s.stateText
         view.stateColor = VehicleSyncHudLayout.COLOR.IDLE
-        if s.nearest ~= nil then
-            view.plan.empty = string.format(getText("vs_hud_nearest"), s.nearest.name, math.floor(s.nearest.distance + 0.5))
-        else
+        if check == REASON.NOT_ALLOWED then
+            view.plan.empty = getText(VehicleSyncController.getReasonTextKey(check))
+        elseif s.nearest == nil then
             view.plan.empty = getText("vs_hud_noNetwork")
+        else
+            local key = check == REASON.OUT_OF_RANGE and "vs_hud_nearestFar" or "vs_hud_nearest"
+            view.plan.empty = string.format(getText(key), s.nearest.name, math.floor(s.nearest.distance + 0.5))
         end
+        local canJoin = check == REASON.CONNECTED or (check == REASON.NONE and s.nearest ~= nil)
         view.buttonLayout = VehicleSyncHudLayout.BUTTONS.SINGLE
-        view.buttons = { button(getText, "vs_button_join", "TOGGLE_CONNECT") }
+        view.buttons = { button(getText, "vs_button_join", "TOGGLE_CONNECT", 0, canJoin) }
     end
 
     return view
@@ -299,7 +326,7 @@ local function rect(x, y, w, h)
 end
 
 ---Positions every element of the panel. `left` / `top` is the top left corner of the panel.
----@return table layout {panel, header, close, band, bar, plan, readout, buttons {{rect, button}}, hits, width, height, unitX, unitY, pixelsPerMetre}
+---@return table layout {panel, header, close, band, bar, plan, banner, readout, buttons {{rect, button}}, hits, width, height, unitX, unitY, pixelsPerMetre}
 function VehicleSyncHudLayout.layout(view, left, top, unitX, unitY)
     local S = VehicleSyncHudLayout.SIZE
     local width = S.WIDTH * unitX
@@ -319,6 +346,7 @@ function VehicleSyncHudLayout.layout(view, left, top, unitX, unitY)
     local planHeight = view.plan.empty ~= nil and S.PLAN_EMPTY or S.PLAN
     y = y - padY - planHeight * unitY
     lay.plan = rect(contentX, y, contentW, planHeight * unitY)
+    lay.banner = rect(contentX, y + (planHeight - S.BANNER) * unitY, contentW, S.BANNER * unitY)
     lay.window = VehicleSyncHudLayout.getWindow(view.plan.zoom)
     lay.pixelsPerMetre = math.min(contentW / unitX / (2 * lay.window.lateral), planHeight / (lay.window.front + lay.window.back))
 

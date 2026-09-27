@@ -18,7 +18,7 @@ local function engagedCtx(overrides)
     local ctx = {
         state = STATE.TRACKING, dt = 16, leaderExists = true, networkEnabled = true, distance = 10,
         operatorPresent = true, motorStarted = true, operatorSteering = false, operatorPedal = false,
-        operatorCruise = false, cartFull = false, leaderSpeed = 8, leaderCurvature = 0, stopTimer = 0,
+        operatorCruise = false, cartFull = false, leaderSpeed = 8, leaderCurvature = 0, abortTimer = 0,
         geometry = geometry(),
     }
     for k, v in pairs(overrides or {}) do ctx[k] = v end
@@ -289,53 +289,75 @@ describe("VehicleSyncController", function()
             assert.equals(STATE.CONNECTED, s)
             assert.equals(REASON.NONE, r)
         end)
-        it("falls back to CONNECTED on every engaged fault", function()
+        it("falls back to CONNECTED at once when the operator takes over or the engine stops", function()
             local cases = {
                 { { operatorPresent = false }, REASON.OPERATOR_LEFT },
                 { { operatorSteering = true }, REASON.OPERATOR_STEERING },
                 { { operatorPedal = true }, REASON.OPERATOR_PEDAL },
                 { { operatorCruise = true }, REASON.OPERATOR_CRUISE },
                 { { motorStarted = false }, REASON.MOTOR_OFF },
+            }
+            for i, case in ipairs(cases) do
+                local s, r, t, fault = C.evaluate(engagedCtx(case[1]), settings)
+                assert.equals(STATE.CONNECTED, s, "case " .. i)
+                assert.equals(case[2], r, "case " .. i)
+                assert.equals(0, t)
+                assert.equals(REASON.NONE, fault)
+            end
+        end)
+        it("names every machine fault", function()
+            local cases = {
                 { { cartFull = true }, REASON.CART_FULL },
                 { { leaderSpeed = -2 }, REASON.LEADER_REVERSING },
                 { { leaderSpeed = 17 }, REASON.LEADER_TOO_FAST },
+                { { leaderSpeed = 0 }, REASON.LEADER_STOPPED },
                 { { leaderCurvature = 0.6 }, REASON.LEADER_TURNING },
                 { { geometry = geometry({ headingError = math.rad(70) }) }, REASON.LEADER_TURNING },
                 { { geometry = geometry({ lateralError = 16 }) }, REASON.POSITION_LOST },
                 { { geometry = geometry({ alongError = -31 }) }, REASON.POSITION_LOST },
+                { {}, REASON.NONE },
             }
             for i, case in ipairs(cases) do
-                local s, r = C.evaluate(engagedCtx(case[1]), settings)
-                assert.equals(STATE.CONNECTED, s, "case " .. i)
-                assert.equals(case[2], r, "case " .. i)
+                assert.equals(case[2], C.getFault(engagedCtx(case[1]), settings), "case " .. i)
             end
-        end)
-        it("keeps a full cart engaged when the setting is off", function()
             settings.disengageOnCartFull = false
-            local s = C.evaluate(engagedCtx({ cartFull = true }), settings)
-            assert.equals(STATE.TRACKING, s)
+            assert.equals(REASON.NONE, C.getFault(engagedCtx({ cartFull = true }), settings))
         end)
-        it("waits stopTimeout before dropping a standing leader", function()
-            local ctx = engagedCtx({ leaderSpeed = 0, dt = 1000 })
-            local s, r, t = C.evaluate(ctx, settings)
+        it("ends the sync only when a machine fault lasts for abortDelay", function()
+            assert.equals(5000, settings.abortDelay)
+            local ctx = engagedCtx({ leaderCurvature = 0.6, dt = 2000 })
+            local s, r, t, fault = C.evaluate(ctx, settings)
             assert.equals(STATE.TRACKING, s)
-            assert.equals(1000, t)
-            ctx.stopTimer = t
-            s, r, t = C.evaluate(ctx, settings)
+            assert.equals(REASON.NONE, r)
             assert.equals(2000, t)
-            ctx.stopTimer = t
-            s, r, t = C.evaluate(ctx, settings)
+            assert.equals(REASON.LEADER_TURNING, fault)
+            -- another fault keeps the count going
+            ctx.abortTimer, ctx.leaderCurvature, ctx.leaderSpeed = t, 0, 0
+            s, r, t, fault = C.evaluate(ctx, settings)
+            assert.equals(4000, t)
+            assert.equals(REASON.LEADER_STOPPED, fault)
+            ctx.abortTimer = t
+            s, r, t, fault = C.evaluate(ctx, settings)
             assert.equals(STATE.CONNECTED, s)
             assert.equals(REASON.LEADER_STOPPED, r)
             assert.equals(0, t)
+            assert.equals(REASON.NONE, fault)
         end)
-        it("resets the stop timer once the leader moves again", function()
-            local _, _, t = C.evaluate(engagedCtx({ stopTimer = 2500 }), settings)
-            assert.equals(0, t)
+        it("keeps following during the delay and resets it once the fault is gone", function()
+            local s, _, t, fault = C.evaluate(engagedCtx({ state = STATE.ACQUIRING, leaderSpeed = 0, abortTimer = 1000 }), settings)
+            assert.equals(STATE.TRACKING, s)
+            assert.equals(1016, t)
+            assert.equals(REASON.LEADER_STOPPED, fault)
+            s, _, t = C.evaluate(engagedCtx({ geometry = geometry({ lateralError = 16 }), abortTimer = 100 }), settings)
+            assert.equals(STATE.ACQUIRING, s)
+            assert.equals(116, t)
+            local _, _, reset, none = C.evaluate(engagedCtx({ abortTimer = 4900 }), settings)
+            assert.equals(0, reset)
+            assert.equals(REASON.NONE, none)
         end)
-        it("treats a missing dt / curvature as zero", function()
+        it("treats a missing dt / curvature / timer as zero", function()
             local ctx = engagedCtx({ leaderSpeed = 0 })
-            ctx.dt, ctx.leaderCurvature, ctx.stopTimer = nil, nil, nil
+            ctx.dt, ctx.leaderCurvature, ctx.abortTimer = nil, nil, nil
             local s, _, t = C.evaluate(ctx, settings)
             assert.equals(STATE.TRACKING, s)
             assert.equals(0, t)
@@ -429,7 +451,7 @@ describe("VehicleSyncController", function()
                 local g = C.computeGeometry(leader, follower, { x = cartX, z = cartZ }, home)
                 state = C.evaluate({ state = state, dt = dt * 1000, leaderExists = true, networkEnabled = true,
                     distance = g.distance, operatorPresent = true, motorStarted = true, leaderSpeed = leader.speed,
-                    leaderCurvature = 0, geometry = g, stopTimer = 0 }, settings)
+                    leaderCurvature = 0, geometry = g, abortTimer = 0 }, settings)
                 assert.is_true(C.isEngaged(state), "sync dropped")
                 local cmd = C.computeCommand(state, leader, follower, g, home, settings)
                 -- speed responds with a first order lag, steering is limited to 0.2 1/m

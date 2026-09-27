@@ -52,6 +52,16 @@
         <text name="vs_hud_noNetwork" text="Kein offenes Sync-Netzwerk in der Nähe"/>
         <text name="vs_hud_waiting" text="Warte auf einen Wagen"/>
         <text name="vs_hud_noneEngaged" text="Kein Wagen synchronisiert"/>
+        <text name="vs_hud_ready" text="Bereit zum Aktivieren"/>
+        <text name="vs_hud_ending" text="Endet in %d s"/>
+        <text name="vs_hud_nearestFar" text="Nächstes Netzwerk: %s, %d m - zum Beitreten näher heranfahren"/>
+        <text name="vs_warning_ending" text="Synchronisation endet in %d s: %s"/>
+        <text name="vs_fault_cart_full" text="Überladewagen ist voll"/>
+        <text name="vs_fault_leader_reversing" text="Drescher setzt zurück"/>
+        <text name="vs_fault_leader_too_fast" text="Drescher ist zu schnell"/>
+        <text name="vs_fault_leader_stopped" text="Drescher steht"/>
+        <text name="vs_fault_leader_turning" text="Drescher wendet"/>
+        <text name="vs_fault_position_lost" text="Wagen ist zu weit von der Heimposition entfernt"/>
         <text name="vs_reason_connected" text="Mit dem Sync-Netzwerk verbunden"/>
         <text name="vs_reason_disconnected" text="Sync-Netzwerk verlassen"/>
         <text name="vs_reason_engaged" text="Synchronisation aktiviert"/>

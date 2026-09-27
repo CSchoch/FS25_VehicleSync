@@ -192,7 +192,7 @@ describe("VehicleSyncHud", function()
         it("shows the deviation while engaged and skips the pipe line with a folded pipe", function()
             local leader, follower = connectedScene()
             Spec.handleRequest(follower, ACTION.TOGGLE_ENGAGE, 0, nil)
-            Spec.getSpec(follower).live = { lateralError = 0.25, alongError = -1.5, inZone = true }
+            Spec.getSpec(follower).live = { lateralError = 0.25, alongError = -1.5, inZone = true, check = 0, abortRemaining = 0 }
             V.setPipe(leader, 7, 2, false)
             Hud:toggle(follower)
             Hud:draw()
@@ -354,6 +354,85 @@ describe("VehicleSyncHud", function()
             Hud:mouseEvent(x, y, true, false, LEFT)
             Hud:mouseEvent(x, y, true, false, RIGHT)
             assert.is_false(Hud.isDragging)
+        end)
+    end)
+
+    describe("messages", function()
+        local function bannerTexts()
+            local list = {}
+            for _, t in ipairs(engine.drawn.texts) do
+                table.insert(list, t.text)
+            end
+            return list
+        end
+
+        it("takes messages only while the terminal is visible for that vehicle", function()
+            local v, other = V.create({ entered = true }), V.create({ entered = true })
+            assert.is_false(Hud:showMessage(v, "text", false))
+            Hud:toggle(v)
+            assert.is_false(Hud:showMessage(other, "text", false))
+            assert.is_false(Hud:showMessage(nil, "text", false))
+            g_gui.visible = true
+            assert.is_false(Hud:showMessage(v, "text", false))
+            g_gui.visible = false
+            assert.is_true(Hud:showMessage(v, "text", false))
+            assert.is_true(Hud:getIsShowing(v))
+        end)
+        it("draws warnings red and other messages green for four seconds", function()
+            local v = V.create({ entered = true })
+            Hud:toggle(v)
+            Hud:showMessage(v, "Sync ended: harvester too fast", true)
+            Hud:draw()
+            assert.contains(bannerTexts(), "Sync ended: harvester too fast")
+            assert.equals(1, rectsWithColor(Layout.withAlpha(Layout.COLOR.WARNING, 0.92)))
+            assert.same(Layout.COLOR.PAPER, drawnTexts()["Sync ended: harvester too fast"].color)
+
+            Hud:showMessage(v, "Home point saved", false)
+            engine.drawn = { lines = {}, rects = {}, texts = {} }
+            Hud:draw()
+            assert.equals(1, rectsWithColor(Layout.withAlpha(Layout.COLOR.TRACKING, 0.92)))
+            assert.same(Layout.COLOR.INK, drawnTexts()["Home point saved"].color)
+
+            g_time = Hud.MESSAGE_DURATION + 1
+            engine.drawn = { lines = {}, rects = {}, texts = {} }
+            Hud:draw()
+            assert.not_contains(bannerTexts(), "Home point saved")
+            assert.is_nil(Hud.message)
+        end)
+        it("replaces the game notifications of both operators while the terminal is open", function()
+            local leader, follower = connectedScene({ leaderEntered = true })
+            g_currentMission.notifications, g_currentMission.warnings = {}, {}
+            Hud:toggle(follower)
+            follower:vsShowReason(VehicleSyncController.REASON.LEADER_TOO_FAST)
+            assert.equals("Sync ended: harvester too fast", Hud.message.text)
+            assert.is_true(Hud.message.isWarning)
+            assert.same({}, g_currentMission.warnings)
+
+            -- the harvester driver sees the cart's message in his terminal, named by the cart
+            follower.entered = false
+            Hud:toggle(leader)
+            follower:vsShowReason(VehicleSyncController.REASON.HOME_SET)
+            assert.equals("Tractor: Home point saved", Hud.message.text)
+            Spec.showLeaderNetworkText(leader, true)
+            assert.equals("Sync network opened", Hud.message.text)
+            assert.same({}, g_currentMission.notifications)
+
+            -- closed terminal: the game shows them
+            Hud:close()
+            follower:vsShowReason(VehicleSyncController.REASON.HOME_SET)
+            assert.same({ "Tractor: Home point saved" }, g_currentMission.notifications)
+        end)
+        it("leaves the abort countdown to an open terminal", function()
+            local _, follower = connectedScene()
+            local spec = Spec.getSpec(follower)
+            spec.state = STATE.TRACKING
+            spec.live.check, spec.live.abortRemaining = VehicleSyncController.REASON.LEADER_STOPPED, 2000
+            Hud:toggle(follower)
+            Spec.showAbortWarning(follower)
+            assert.same({}, g_currentMission.warnings)
+            Hud:close()
+            Spec.showAbortWarning(follower)
+            assert.same({ "Sync ends in 2 s: Harvester stopped" }, g_currentMission.warnings)
         end)
     end)
 

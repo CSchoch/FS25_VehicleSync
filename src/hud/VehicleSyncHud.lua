@@ -26,6 +26,7 @@ VehicleSyncHud.XML_ROOT = "vehicleSync"
 VehicleSyncHud.DEFAULT_LEFT = 0.8
 VehicleSyncHud.DEFAULT_TOP = 0.8
 VehicleSyncHud.MIN_TEXT_SCALE = 0.7
+VehicleSyncHud.MESSAGE_DURATION = 4000  -- ms a message stays in the banner
 
 ---Resets the runtime state (file load and delete)
 function VehicleSyncHud:reset()
@@ -42,6 +43,7 @@ function VehicleSyncHud:reset()
     self.height = 0
     self.left = nil
     self.top = nil
+    self.message = nil
 end
 
 VehicleSyncHud:reset()
@@ -66,6 +68,7 @@ function VehicleSyncHud:close()
     self.vehicle = nil
     self.isDragging = false
     self.hoverId = nil
+    self.message = nil
 end
 
 ---Shows or hides the mouse cursor. A cursor this HUD did not show is never hidden.
@@ -103,6 +106,21 @@ end
 
 function VehicleSyncHud:getIsBlocked()
     return g_gui:getIsGuiVisible() or g_noHudModeEnabled
+end
+
+---True if the terminal is visible for this vehicle
+function VehicleSyncHud:getIsShowing(vehicle)
+    return self.isOpen and vehicle ~= nil and self.vehicle == vehicle and not self:getIsBlocked()
+end
+
+---Shows a message in the banner of the terminal instead of a game notification
+---@return boolean shown false if the terminal is not visible for this vehicle
+function VehicleSyncHud:showMessage(vehicle, text, isWarning)
+    if not self:getIsShowing(vehicle) then
+        return false
+    end
+    self.message = { text = text, isWarning = isWarning == true, untilTime = g_time + VehicleSyncHud.MESSAGE_DURATION }
+    return true
 end
 
 -- ---------------------------------------------------------------------------
@@ -352,12 +370,14 @@ function VehicleSyncHud:render(view, lay)
     end
 
     self:renderPlan(view.plan, lay)
+    self:renderMessage(lay)
 
     if lay.readout ~= nil then
         local readout = lay.readout
         local readoutY = readout.y + readout.h / 2
         if view.readout.message ~= nil then
-            self:drawText(readout.x, readoutY, S.TEXT_BODY, view.readout.message, C.PAPER, RenderText.ALIGN_LEFT, false, readout.w, lay)
+            local color = view.readout.warning and C.WARNING or C.PAPER
+            self:drawText(readout.x, readoutY, S.TEXT_BODY, view.readout.message, color, RenderText.ALIGN_LEFT, view.readout.warning == true, readout.w, lay)
         else
             local half = readout.w / 2
             for i, entry in ipairs({ view.readout.left, view.readout.right }) do
@@ -419,6 +439,26 @@ function VehicleSyncHud:renderPlan(plan, lay)
         -- the target on top: the cart has to be moved below it
         self:drawIconAt(ICON.HOME, homeX, homeY, S.HOME_ICON, S.HOME_ICON, lay, C.STRAW)
     end
+end
+
+---Message banner across the top of the plan view (red for warnings, green otherwise)
+function VehicleSyncHud:renderMessage(lay)
+    local message = self.message
+    if message == nil then
+        return
+    end
+    if g_time > message.untilTime then
+        self.message = nil
+        return
+    end
+    local C = VehicleSyncHudLayout.COLOR
+    local S = VehicleSyncHudLayout.SIZE
+    local banner = lay.banner
+    local fill = message.isWarning and C.WARNING or C.TRACKING
+    local ink = message.isWarning and C.PAPER or C.INK
+    self:drawRect(banner, VehicleSyncHudLayout.withAlpha(fill, 0.92))
+    self:drawText(banner.x + banner.w / 2, banner.y + banner.h / 2, S.TEXT_BODY, message.text, ink, RenderText.ALIGN_CENTER, true,
+        banner.w - 2 * S.PADDING * lay.unitX, lay)
 end
 
 ---Straw dots from the harvester to the home point

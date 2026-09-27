@@ -46,11 +46,21 @@ Key facts:
 - Join in progress: `onWriteStream` / `onReadStream`; the leader may be streamed after the follower,
   so the leader id is resolved lazily (`pendingLeaderId`, `vsGetLeader`).
 - Timers / takeover flags reset only when engaged-ness changes (ACQUIRING <-> TRACKING keeps them).
+- **Aborts:** operator takeover (steering, pedals, cruise, leaving) and engine off end the sync
+  at once; machine faults (`VehicleSyncController.getFault`: cart full, harvester reversing / too
+  fast / stopped / turning, position lost) only after `abortDelay` (5 s, setting), counted while any
+  fault lasts. The operators get a countdown (terminal + blinking warning `vs_warning_ending`).
+- **`live.check`** (streamed) is the server's answer to "what happens next": IDLE and operated =
+  `checkConnect` reason, CONNECTED = `checkEngage` reason, engaged = the fault counting down. The
+  terminal only offers Join / Engage when that check passes; reset to NONE on every state change.
 - **Terminal (HUD):** only `VS_TOGGLE_HUD` (Left Alt + Y) has a default key; the other 9 actions are
   declared without `<actionBinding>` (bindable in Controls). Alt+Y opens the terminal with the cursor,
   or only brings the cursor back while it is open; right click hides the cursor; only the × button
   (or leaving the vehicle) closes it. The HUD hides only a cursor it showed itself and locks
   `spec_enterable.cameras[].isRotatable` while the cursor is on. Buttons call `vehicle:vsRequest`.
+- Messages go through `VehicleSyncSpec.showNotification(text, isWarning, vehicle)`: while the
+  terminal is open for that vehicle they appear in its banner (4 s), otherwise as game
+  notifications; the blinking abort countdown is skipped while the terminal shows it.
 - Colours in `VehicleSyncHudLayout.COLOR` are sRGB hex converted to linear (engine colour space).
 - Home point arrow: `drawDebugLine` arrow, tip 6 m above the terrain, shown 5 s after set/nudge.
 

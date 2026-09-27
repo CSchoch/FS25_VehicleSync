@@ -112,10 +112,10 @@ describe("VehicleSync bootstrap", function()
     end)
 
     it("saves the settings with the career savegame on the server only", function()
-        VehicleSyncSettings.set("stopTimeout", 5000)
+        VehicleSyncSettings.set("abortDelay", 7000)
         FSCareerMissionInfo.saveToXMLFile({ savegameDirectory = "slot1" })
         assert.equals(1, FSCareerMissionInfo.saveCalls)
-        assert.equals(5000, engine.files["slot1/vehicleSync.xml"]["vehicleSync.settings#stopTimeout"])
+        assert.equals(7000, engine.files["slot1/vehicleSync.xml"]["vehicleSync.settings#abortDelay"])
 
         g_server = nil
         FSCareerMissionInfo.saveToXMLFile({ savegameDirectory = "slot2" })

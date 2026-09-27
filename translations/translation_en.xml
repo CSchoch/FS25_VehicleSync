@@ -52,6 +52,16 @@
         <text name="vs_hud_noNetwork" text="No open sync network nearby"/>
         <text name="vs_hud_waiting" text="Waiting for a cart to join"/>
         <text name="vs_hud_noneEngaged" text="No cart engaged"/>
+        <text name="vs_hud_ready" text="Ready to engage"/>
+        <text name="vs_hud_ending" text="Ends in %d s"/>
+        <text name="vs_hud_nearestFar" text="Nearest network: %s, %d m - drive closer to join"/>
+        <text name="vs_warning_ending" text="Sync ends in %d s: %s"/>
+        <text name="vs_fault_cart_full" text="Grain cart is full"/>
+        <text name="vs_fault_leader_reversing" text="Harvester is reversing"/>
+        <text name="vs_fault_leader_too_fast" text="Harvester is too fast"/>
+        <text name="vs_fault_leader_stopped" text="Harvester stopped"/>
+        <text name="vs_fault_leader_turning" text="Harvester is turning"/>
+        <text name="vs_fault_position_lost" text="Cart is too far from the home point"/>
         <text name="vs_reason_connected" text="Connected to the sync network"/>
         <text name="vs_reason_disconnected" text="Left the sync network"/>
         <text name="vs_reason_engaged" text="Sync engaged"/>

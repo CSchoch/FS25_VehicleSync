@@ -78,7 +78,7 @@ VehicleSyncController.DEFAULTS = {
     maxSyncSpeed = 16,               -- km/h, sync window upper limit
     maxLeaderCurvature = 0.5,        -- deg per meter of leader travel
     curvatureWindow = 3,             -- meters of travel the curvature is averaged over
-    stopTimeout = 3000,              -- ms the leader may stand still before sync disengages
+    abortDelay = 5000,               -- ms a machine fault (harvester stopped, turning, ...) may last before sync disengages
     radioRange = 500,                -- m, sync network range
     connectRange = 60,               -- m, max. distance to join a network
     zoneLateral = 25,                -- m, operational zone: max. lateral distance to the leader
@@ -377,93 +377,104 @@ end
 --   leaderSpeed (signed km/h), leaderCurvature (deg/m)
 --   operatorSteering, operatorPedal, operatorCruise (booleans)
 --   cartFull
---   stopTimer (ms the leader already stands still)
+--   abortTimer (ms the current machine fault already lasts)
 ---@return number newState
 ---@return number reason REASON.NONE if nothing changed
----@return number stopTimer updated stop timer
+---@return number abortTimer updated abort timer
+---@return number fault machine fault that is counting down (REASON.NONE if none)
 function VehicleSyncController.evaluate(ctx, settings)
     local state = VehicleSyncController.STATE
     local reason = VehicleSyncController.REASON
     local current = ctx.state
-    local stopTimer = ctx.stopTimer or 0
 
     if current == state.IDLE then
-        return current, reason.NONE, 0
+        return current, reason.NONE, 0, reason.NONE
     end
 
     -- connection level rules, valid for every linked state
     if not ctx.leaderExists then
-        return state.IDLE, reason.LEADER_LOST, 0
+        return state.IDLE, reason.LEADER_LOST, 0, reason.NONE
     end
     if not ctx.networkEnabled then
-        return state.IDLE, reason.NETWORK_CLOSED, 0
+        return state.IDLE, reason.NETWORK_CLOSED, 0, reason.NONE
     end
     if ctx.distance > settings.radioRange then
-        return state.IDLE, reason.OUT_OF_RANGE, 0
+        return state.IDLE, reason.OUT_OF_RANGE, 0, reason.NONE
     end
 
     if current == state.CONNECTED then
-        return current, reason.NONE, 0
+        return current, reason.NONE, 0, reason.NONE
     end
 
-    -- engaged rules: every fault falls back to CONNECTED
+    -- the operator takes over instantly: engaged rules that fall back to CONNECTED at once
     if not ctx.operatorPresent then
-        return state.CONNECTED, reason.OPERATOR_LEFT, 0
+        return state.CONNECTED, reason.OPERATOR_LEFT, 0, reason.NONE
     end
     if ctx.operatorSteering then
-        return state.CONNECTED, reason.OPERATOR_STEERING, 0
+        return state.CONNECTED, reason.OPERATOR_STEERING, 0, reason.NONE
     end
     if ctx.operatorPedal then
-        return state.CONNECTED, reason.OPERATOR_PEDAL, 0
+        return state.CONNECTED, reason.OPERATOR_PEDAL, 0, reason.NONE
     end
     if ctx.operatorCruise then
-        return state.CONNECTED, reason.OPERATOR_CRUISE, 0
+        return state.CONNECTED, reason.OPERATOR_CRUISE, 0, reason.NONE
     end
     if not ctx.motorStarted then
-        return state.CONNECTED, reason.MOTOR_OFF, 0
+        return state.CONNECTED, reason.MOTOR_OFF, 0, reason.NONE
     end
+
+    -- machine faults only end the sync when they last for abortDelay (e.g. a short stop or a
+    -- correction of the harvester driver); the time counts as long as any fault is present
+    local fault = VehicleSyncController.getFault(ctx, settings)
+    local abortTimer = 0
+    if fault ~= reason.NONE then
+        abortTimer = (ctx.abortTimer or 0) + (ctx.dt or 0)
+        if abortTimer >= settings.abortDelay then
+            return state.CONNECTED, fault, 0, reason.NONE
+        end
+    end
+
+    local geometry = ctx.geometry
+    if current == state.ACQUIRING then
+        if math.abs(geometry.lateralError) <= settings.trackingLateralTolerance and math.abs(geometry.alongError) <= settings.trackingAlongTolerance then
+            return state.TRACKING, reason.NONE, abortTimer, fault
+        end
+    elseif current == state.TRACKING then
+        if math.abs(geometry.lateralError) > settings.reacquireLateral or math.abs(geometry.alongError) > settings.reacquireAlong then
+            return state.ACQUIRING, reason.NONE, abortTimer, fault
+        end
+    end
+
+    return current, reason.NONE, abortTimer, fault
+end
+
+---First machine fault of an engaged sync (REASON.NONE if everything is fine)
+---@return number reason
+function VehicleSyncController.getFault(ctx, settings)
+    local reason = VehicleSyncController.REASON
     if ctx.cartFull and settings.disengageOnCartFull then
-        return state.CONNECTED, reason.CART_FULL, 0
+        return reason.CART_FULL
     end
 
     local leaderSpeed = ctx.leaderSpeed
     if leaderSpeed < -settings.minSyncSpeed then
-        return state.CONNECTED, reason.LEADER_REVERSING, 0
+        return reason.LEADER_REVERSING
     end
     if leaderSpeed > settings.maxSyncSpeed then
-        return state.CONNECTED, reason.LEADER_TOO_FAST, 0
+        return reason.LEADER_TOO_FAST
     end
     if leaderSpeed < settings.minSyncSpeed then
-        stopTimer = stopTimer + (ctx.dt or 0)
-        if stopTimer >= settings.stopTimeout then
-            return state.CONNECTED, reason.LEADER_STOPPED, 0
-        end
-    else
-        stopTimer = 0
-    end
-    if (ctx.leaderCurvature or 0) > settings.maxLeaderCurvature then
-        return state.CONNECTED, reason.LEADER_TURNING, 0
+        return reason.LEADER_STOPPED
     end
 
     local geometry = ctx.geometry
-    if math.abs(math.deg(geometry.headingError)) > settings.disengageHeading then
-        return state.CONNECTED, reason.LEADER_TURNING, 0
+    if (ctx.leaderCurvature or 0) > settings.maxLeaderCurvature or math.abs(math.deg(geometry.headingError)) > settings.disengageHeading then
+        return reason.LEADER_TURNING
     end
     if math.abs(geometry.lateralError) > settings.positionLostLateral or math.abs(geometry.alongError) > settings.positionLostAlong then
-        return state.CONNECTED, reason.POSITION_LOST, 0
+        return reason.POSITION_LOST
     end
-
-    if current == state.ACQUIRING then
-        if math.abs(geometry.lateralError) <= settings.trackingLateralTolerance and math.abs(geometry.alongError) <= settings.trackingAlongTolerance then
-            return state.TRACKING, reason.NONE, stopTimer
-        end
-    elseif current == state.TRACKING then
-        if math.abs(geometry.lateralError) > settings.reacquireLateral or math.abs(geometry.alongError) > settings.reacquireAlong then
-            return state.ACQUIRING, reason.NONE, stopTimer
-        end
-    end
-
-    return current, reason.NONE, stopTimer
+    return reason.NONE
 end
 
 -- ---------------------------------------------------------------------------
@@ -541,6 +552,17 @@ function VehicleSyncController.getReasonTextKey(reasonCode)
         return nil
     end
     return "vs_reason_" .. string.lower(name)
+end
+
+---Returns the l10n key describing a machine fault while it counts down ("vs_fault_<name>")
+---@param reasonCode number
+---@return string|nil
+function VehicleSyncController.getFaultTextKey(reasonCode)
+    local key = VehicleSyncController.getReasonTextKey(reasonCode)
+    if key == nil then
+        return nil
+    end
+    return "vs_fault_" .. key:sub(#"vs_reason_" + 1)
 end
 
 ---Returns true if the reason should be shown as a warning (red) instead of an info (green)

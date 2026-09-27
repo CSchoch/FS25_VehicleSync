@@ -258,6 +258,11 @@ describe("translations", function()
                 assert.is_not_nil(en[key], key)
             end
         end
+        for _, fault in ipairs({ "CART_FULL", "LEADER_REVERSING", "LEADER_TOO_FAST", "LEADER_STOPPED", "LEADER_TURNING", "POSITION_LOST" }) do
+            local key = VehicleSyncController.getFaultTextKey(VehicleSyncController.REASON[fault])
+            assert.is_not_nil(en[key], key)
+        end
+        assert.is_nil(VehicleSyncController.getFaultTextKey(VehicleSyncController.REASON.NONE))
         for _, state in ipairs({ "idle", "connected", "acquiring", "tracking" }) do
             assert.is_not_nil(en["vs_state_" .. state])
         end

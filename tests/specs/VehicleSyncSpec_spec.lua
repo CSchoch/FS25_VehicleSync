@@ -626,14 +626,16 @@ describe("VehicleSyncSpec", function()
             follower:onUpdate(16, false, false, false)
             assert.equals(STATE.CONNECTED, follower:vsGetState())
         end)
-        it("drops the sync when the cart is full", function()
+        it("drops the sync when the cart stays full for the abort delay", function()
             local leader, follower = V.createScene({ cartFill = 19000 })
             engage(leader, follower)
             follower.cart.fillUnits[2].fillLevel = 20000
-            follower:onUpdate(16, false, false, false)
+            follower:onUpdate(4000, false, false, false)
+            assert.is_true(VehicleSyncController.isEngaged(follower:vsGetState()))
+            follower:onUpdate(1000, false, false, false)
             assert.equals(REASON.CART_FULL, Spec.getSpec(follower).lastReason)
         end)
-        it("drops the sync in a headland turn", function()
+        it("drops the sync in a headland turn that lasts for the abort delay", function()
             local leader, follower = V.createScene()
             engage(leader, follower)
             for i = 1, 10 do
@@ -641,8 +643,81 @@ describe("VehicleSyncSpec", function()
                 leader:onUpdate(16, false, false, false)
             end
             follower:onUpdate(16, false, false, false)
+            assert.equals(REASON.LEADER_TURNING, Spec.getSpec(follower).fault)
+            follower:onUpdate(5000, false, false, false)
             assert.equals(STATE.CONNECTED, follower:vsGetState())
             assert.equals(REASON.LEADER_TURNING, Spec.getSpec(follower).lastReason)
+            assert.equals(0, Spec.getSpec(follower).abortTimer)
+        end)
+        it("counts a fault down for the operators and forgets it when the fault is gone", function()
+            local leader, follower = V.createScene({ leaderEntered = true })
+            engage(leader, follower)
+            follower:onUpdate(16, false, false, false)
+            leader.speed = 0
+            Spec.getSpec(follower).liveTimer = 0
+            follower:onUpdate(2000, false, false, false)
+            local live = Spec.getSpec(follower).live
+            assert.equals(REASON.LEADER_STOPPED, live.check)
+            assert.equals(3000, live.abortRemaining)
+            assert.contains(g_currentMission.warnings, "Sync ends in 3 s: Harvester stopped")
+            leader.speed = 8
+            Spec.getSpec(follower).liveTimer = 0
+            follower:onUpdate(16, false, false, false)
+            assert.equals(REASON.NONE, live.check)
+            assert.equals(0, live.abortRemaining)
+            assert.equals(0, Spec.getSpec(follower).abortTimer)
+        end)
+        it("shows the countdown only to the two operators", function()
+            local leader, follower = V.createScene({ followerEntered = false })
+            local spec = Spec.getSpec(follower)
+            spec.state = STATE.TRACKING
+            spec.leader = leader
+            spec.live.check, spec.live.abortRemaining = REASON.LEADER_STOPPED, 1000
+            Spec.showAbortWarning(follower)
+            assert.equals(0, #g_currentMission.warnings)
+            leader.entered = true
+            Spec.showAbortWarning(follower)
+            assert.same({ "Sync ends in 1 s: Harvester stopped" }, g_currentMission.warnings)
+        end)
+        it("reports whether Engage would work while connected", function()
+            local leader, follower = V.createScene()
+            connect(leader, follower)
+            follower:onUpdate(16, false, false, false)
+            local live = Spec.getSpec(follower).live
+            assert.equals(REASON.ENGAGED, live.check)
+            -- in the zone, but the harvester does not move: the terminal must not promise the sync
+            leader.speed = 0
+            Spec.getSpec(follower).liveTimer = 0
+            follower:onUpdate(16, false, false, false)
+            assert.is_true(live.inZone)
+            assert.equals(REASON.LEADER_SPEED_WINDOW, live.check)
+            -- the answer is reset with every state change
+            follower:vsSetState(STATE.ACQUIRING, REASON.NONE, nil)
+            assert.equals(REASON.NONE, live.check)
+            assert.equals(0, Spec.getSpec(follower).liveTimer)
+        end)
+        it("reports whether Join would work for an operated idle tractor", function()
+            local leader, follower = V.createScene()
+            follower:onUpdate(16, false, false, false)
+            local live = Spec.getSpec(follower).live
+            assert.equals(REASON.NO_LEADER, live.check)
+            assert.equals(1, follower.dirtyRaised)
+            assert.equals(1, follower.activeRaised)
+            leader:vsSetNetworkEnabled(true)
+            follower:onUpdate(100, false, false, false)
+            assert.equals(REASON.NO_LEADER, live.check)
+            follower:onUpdate(200, false, false, false)
+            assert.equals(REASON.CONNECTED, live.check)
+            V.setPose(follower, 200, 0, 0)
+            follower:onUpdate(250, false, false, false)
+            assert.equals(REASON.OUT_OF_RANGE, live.check)
+            -- unchanged answers are not sent again
+            follower:onUpdate(250, false, false, false)
+            assert.equals(3, follower.dirtyRaised)
+            -- nobody in the tractor: nothing to check
+            follower.controlled = false
+            follower:onUpdate(250, false, false, false)
+            assert.equals(3, follower.dirtyRaised)
         end)
         it("drops the link when the leader disappears or leaves the radio range", function()
             local leader, follower = V.createScene()
@@ -659,11 +734,11 @@ describe("VehicleSyncSpec", function()
             assert.equals(STATE.IDLE, follower:vsGetState())
             assert.equals(REASON.LEADER_LOST, Spec.getSpec(follower).lastReason)
         end)
-        it("drops the sync after the leader stood still for stopTimeout", function()
+        it("drops the sync after the leader stood still for the abort delay", function()
             local leader, follower = V.createScene()
             engage(leader, follower)
             leader.speed = 0
-            for _ = 1, 2 do
+            for _ = 1, 4 do
                 follower:onUpdate(1000, false, false, false)
             end
             assert.is_true(VehicleSyncController.isEngaged(follower:vsGetState()))

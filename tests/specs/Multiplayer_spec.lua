@@ -243,6 +243,8 @@ describe("Multiplayer", function()
         flushRequests(tp)
         world.leader.speed = 20
         serverFrames(1)
+        assert.is_true(VehicleSyncController.isEngaged(tp.follower:vsGetState()))
+        serverFrames(1, 5000)
         assert.equals(STATE.CONNECTED, tp.follower:vsGetState())
         assert.equals(REASON.LEADER_TOO_FAST, Spec.getSpec(tp.follower).lastReason)
         assert.contains(g_currentMission.warnings, "Sync ended: harvester too fast")

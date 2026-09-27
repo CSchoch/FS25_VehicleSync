@@ -21,11 +21,11 @@ Everything is operated in the Vehicle Sync terminal: press Left Alt + Y in the v
 TAKING OVER:
 The tractor driver stays in control at all times. Steering, accelerating, braking or switching on the cruise control ends the sync immediately. When you take over by steering, the tractor keeps the harvester's speed on cruise control so the cart does not brake hard below the pipe.
 
-The sync also ends when:
-- the harvester stops for more than 3 seconds, reverses or drives faster than 16 km/h
-- the harvester turns sharply (e.g. headland turn) or the vehicles get too far apart
+The sync also ends when one of these lasts for more than 5 seconds (the terminal and a warning count down, so a short stop or correction does not end it):
+- the harvester stops, reverses or drives faster than 16 km/h
+- the harvester turns sharply (e.g. headland turn) or the cart gets too far from the home point
 - the grain cart is full
-- the tractor driver leaves the vehicle or the engine is off
+It ends at once when the tractor driver leaves the vehicle or the engine is off.
 The tractor stays connected to the network, so you can re-engage with one click.
 
 HOME POINT:
@@ -58,11 +58,11 @@ Alles wird im Fahrzeug Sync Terminal bedient: im Fahrzeug Linke Alt + Y drücken
 ÜBERNEHMEN:
 Der Traktorfahrer behält jederzeit die Kontrolle. Lenken, Gas geben, Bremsen oder Einschalten des Tempomats beendet die Synchronisation sofort. Wird durch Lenken übernommen, hält der Traktor die Geschwindigkeit des Dreschers per Tempomat, damit der Wagen unter dem Rohr nicht stark abbremst.
 
-Die Synchronisation endet außerdem, wenn:
-- der Drescher länger als 3 Sekunden steht, zurücksetzt oder schneller als 16 km/h fährt
-- der Drescher eng wendet (z. B. am Vorgewende) oder die Fahrzeuge zu weit auseinander sind
+Die Synchronisation endet außerdem, wenn einer dieser Fälle länger als 5 Sekunden anhält (Terminal und Warnung zählen herunter, ein kurzes Anhalten oder Korrigieren beendet sie also nicht):
+- der Drescher steht, zurücksetzt oder schneller als 16 km/h fährt
+- der Drescher eng wendet (z. B. am Vorgewende) oder der Wagen zu weit von der Heimposition entfernt ist
 - der Überladewagen voll ist
-- der Traktorfahrer aussteigt oder der Motor aus ist
+Sie endet sofort, wenn der Traktorfahrer aussteigt oder der Motor aus ist.
 Der Traktor bleibt mit dem Netzwerk verbunden und kann per Klick erneut synchronisiert werden.
 
 HEIMPOSITION:

@@ -32,6 +32,7 @@ VehicleSyncSpec.LIVE_UPDATE_INTERVAL = 250    -- ms between HUD value updates se
 VehicleSyncSpec.PIPE_MEASURE_INTERVAL = 500   -- ms between pipe offset measurements
 VehicleSyncSpec.PIPE_CHANGE_THRESHOLD = 0.2   -- m, pipe offset change that updates automatic home points
 VehicleSyncSpec.NOTIFICATION_DURATION = 3000  -- ms
+VehicleSyncSpec.ABORT_WARNING_DURATION = 500  -- ms, renewed with every live update while a fault counts down
 VehicleSyncSpec.HOME_MARKER_DURATION = 5000   -- ms the home point is shown after it changed
 VehicleSyncSpec.HOME_ARROW_TIP = 6           -- m above the terrain, clear of cart and pipe
 VehicleSyncSpec.HOME_ARROW_LENGTH = 3        -- m from the tip to the tail
@@ -304,10 +305,14 @@ function VehicleSyncSpec:onLoad(savegame)
     spec.homeMarkerUntil = nil
 
     spec.dirtyFlag = self:getNextDirtyFlag()
-    spec.live = { lateralError = 0, alongError = 0, inZone = false }
+    -- live values for the operators (server -> clients every LIVE_UPDATE_INTERVAL). check is the
+    -- answer to "what happens next": IDLE = checkConnect reason (CONNECTED = can join),
+    -- CONNECTED = checkEngage reason (ENGAGED = can engage), engaged = machine fault counting down
+    spec.live = { lateralError = 0, alongError = 0, inZone = false, check = REASON.NONE, abortRemaining = 0 }
 
     -- server only runtime data
-    spec.stopTimer = 0
+    spec.abortTimer = 0
+    spec.fault = REASON.NONE
     spec.liveTimer = 0
     spec.pipeTimer = 0
     spec.pipeOffset = nil
@@ -447,7 +452,8 @@ function VehicleSyncSpec:vsApplyState(state, leader, home, homeIsAuto, networkEn
     -- ACQUIRING <-> TRACKING keeps the timers, only engaging / disengaging resets them
     if VehicleSyncController.isEngaged(oldState) ~= VehicleSyncController.isEngaged(state) then
         spec.takeoverRequested = false
-        spec.stopTimer = 0
+        spec.abortTimer = 0
+        spec.fault = REASON.NONE
         spec.operatorPedal = false
         spec.operatorCruise = false
     end
@@ -459,6 +465,13 @@ function VehicleSyncSpec:vsApplyState(state, leader, home, homeIsAuto, networkEn
 
     if reason ~= REASON.NONE then
         self:vsShowReason(reason)
+    end
+
+    -- the check of the old state means something else in the new one; refresh it right away
+    if oldState ~= state then
+        spec.live.check = REASON.NONE
+        spec.live.abortRemaining = 0
+        spec.liveTimer = 0
     end
 
     if VehicleSyncSpec.getIsHomeChange(oldHome, home, homeIsAuto, reason) then
@@ -561,7 +574,7 @@ end
 function VehicleSyncSpec.showLeaderNetworkText(vehicle, enabled)
     if vehicle.getIsEntered ~= nil and vehicle:getIsEntered() and g_currentMission ~= nil then
         local key = enabled and "vs_network_opened" or "vs_network_closed"
-        g_currentMission:addIngameNotification(FSBaseMission.INGAME_NOTIFICATION_OK, g_i18n:getText(key, VehicleSyncSpec.MOD_NAME))
+        VehicleSyncSpec.showNotification(g_i18n:getText(key, VehicleSyncSpec.MOD_NAME), false, vehicle)
     end
 end
 
@@ -574,17 +587,43 @@ function VehicleSyncSpec:vsShowReason(reason)
 
     local isWarning = VehicleSyncController.isWarningReason(reason)
     if self.getIsEntered ~= nil and self:getIsEntered() then
-        VehicleSyncSpec.showNotification(text, isWarning)
+        VehicleSyncSpec.showNotification(text, isWarning, self)
         return
     end
 
     local leader = VehicleSyncSpec.getSpec(self).leader
     if leader ~= nil and leader.getIsEntered ~= nil and leader:getIsEntered() then
-        VehicleSyncSpec.showNotification(string.format("%s: %s", self:getName(), text), isWarning)
+        VehicleSyncSpec.showNotification(string.format("%s: %s", self:getName(), text), isWarning, leader)
     end
 end
 
-function VehicleSyncSpec.showNotification(text, isWarning)
+---Warns the operators of an engaged follower and its leader while a machine fault counts down
+function VehicleSyncSpec.showAbortWarning(vehicle)
+    local spec = VehicleSyncSpec.getSpec(vehicle)
+    if not VehicleSyncController.isEngaged(spec.state) or spec.live.check == REASON.NONE or g_currentMission == nil then
+        return
+    end
+    local leader = spec.leader
+    local isOperator = vehicle.getIsEntered ~= nil and vehicle:getIsEntered()
+    local isLeaderOperator = leader ~= nil and leader.getIsEntered ~= nil and leader:getIsEntered()
+    if not isOperator and not isLeaderOperator then
+        return
+    end
+    -- an open terminal already counts down in its state band
+    if VehicleSyncHud:getIsShowing(isOperator and vehicle or leader) then
+        return
+    end
+    local fault = g_i18n:getText(VehicleSyncController.getFaultTextKey(spec.live.check), VehicleSyncSpec.MOD_NAME)
+    local text = string.format(g_i18n:getText("vs_warning_ending", VehicleSyncSpec.MOD_NAME), math.ceil(spec.live.abortRemaining / 1000), fault)
+    g_currentMission:showBlinkingWarning(text, VehicleSyncSpec.ABORT_WARNING_DURATION)
+end
+
+---Shows a message to the operator of `vehicle`: in the terminal while it is open, otherwise as a
+-- game notification (warnings blink)
+function VehicleSyncSpec.showNotification(text, isWarning, vehicle)
+    if VehicleSyncHud:showMessage(vehicle, text, isWarning) then
+        return
+    end
     if isWarning then
         g_currentMission:showBlinkingWarning(text, VehicleSyncSpec.NOTIFICATION_DURATION)
     else
@@ -707,8 +746,11 @@ function VehicleSyncSpec.updateAutoHome(follower, leader, settings)
     spec.homeIsAuto = true
 end
 
-function VehicleSyncSpec.tryConnect(vehicle, settings, connection)
-    local spec = VehicleSyncSpec.getSpec(vehicle)
+---Server: requirements to join the nearest open network
+---@return boolean ok
+---@return number reason
+---@return table|nil leader
+function VehicleSyncSpec.checkConnect(vehicle, settings)
     local leader, distance = VehicleSyncSpec.findNearestLeader(vehicle)
     local ok, reason = VehicleSyncController.checkConnect({
         leaderExists = leader ~= nil,
@@ -717,6 +759,12 @@ function VehicleSyncSpec.tryConnect(vehicle, settings, connection)
         sameFarm = leader ~= nil and VehicleSyncSpec.getIsSameFarm(vehicle, leader),
         distance = distance,
     }, settings)
+    return ok, reason, leader
+end
+
+function VehicleSyncSpec.tryConnect(vehicle, settings, connection)
+    local spec = VehicleSyncSpec.getSpec(vehicle)
+    local ok, reason, leader = VehicleSyncSpec.checkConnect(vehicle, settings)
 
     if not ok then
         VehicleSyncSpec.sendFeedback(vehicle, reason, connection)
@@ -744,6 +792,27 @@ function VehicleSyncSpec.getIsLeaderBusy(leader, follower)
     return false
 end
 
+---Server: requirements to engage, exactly as pressing Engage would check them
+---@return boolean ok
+---@return number reason
+function VehicleSyncSpec.checkEngage(vehicle, leader, geometry, leaderPose, settings)
+    local spec = VehicleSyncSpec.getSpec(vehicle)
+    local operatorPresent = vehicle:getIsControlled() and not vehicle:getIsAIActive()
+    if vehicle.getReverserDirection ~= nil and vehicle:getReverserDirection() < 0 then
+        operatorPresent = false
+    end
+
+    return VehicleSyncController.checkEngage({
+        state = spec.state,
+        geometry = geometry,
+        leaderSpeed = leaderPose.speed,
+        leaderBusy = VehicleSyncSpec.getIsLeaderBusy(leader, vehicle),
+        operatorPresent = operatorPresent,
+        motorStarted = vehicle:getIsMotorStarted(),
+        cartFull = VehicleSyncSpec.getReceiverFillRatio(spec.receiver) >= settings.cartFullThreshold,
+    }, settings)
+end
+
 function VehicleSyncSpec.tryEngage(vehicle, settings, connection)
     local spec = VehicleSyncSpec.getSpec(vehicle)
     local leader = spec.leader
@@ -754,20 +823,7 @@ function VehicleSyncSpec.tryEngage(vehicle, settings, connection)
     end
 
     local geometry, leaderPose = VehicleSyncSpec.buildGeometry(vehicle, leader, settings)
-    local operatorPresent = vehicle:getIsControlled() and not vehicle:getIsAIActive()
-    if vehicle.getReverserDirection ~= nil and vehicle:getReverserDirection() < 0 then
-        operatorPresent = false
-    end
-
-    local ok, reason = VehicleSyncController.checkEngage({
-        state = spec.state,
-        geometry = geometry,
-        leaderSpeed = leaderPose.speed,
-        leaderBusy = VehicleSyncSpec.getIsLeaderBusy(leader, vehicle),
-        operatorPresent = operatorPresent,
-        motorStarted = vehicle:getIsMotorStarted(),
-        cartFull = VehicleSyncSpec.getReceiverFillRatio(spec.receiver) >= settings.cartFullThreshold,
-    }, settings)
+    local ok, reason = VehicleSyncSpec.checkEngage(vehicle, leader, geometry, leaderPose, settings)
 
     if not ok then
         VehicleSyncSpec.sendFeedback(vehicle, reason, connection)
@@ -859,12 +915,15 @@ function VehicleSyncSpec:onUpdate(dt, isActiveForInput, isActiveForInputIgnoreSe
         VehicleSyncSpec.updateLeader(self, dt, settings)
     end
 
+    local isIdleOperated = spec.state == STATE.IDLE and not spec.networkEnabled and self:getIsControlled()
     if spec.state ~= STATE.IDLE then
         VehicleSyncSpec.updateFollower(self, dt, settings)
+    elseif isIdleOperated then
+        VehicleSyncSpec.updateIdle(self, dt, settings)
     end
 
-    -- idle vehicles drop out of the update loop; linked ones must keep checking their link
-    if (spec.networkEnabled or spec.state ~= STATE.IDLE) and self.raiseActive ~= nil then
+    -- idle vehicles drop out of the update loop; linked and operated ones keep checking
+    if (spec.networkEnabled or spec.state ~= STATE.IDLE or isIdleOperated) and self.raiseActive ~= nil then
         self:raiseActive()
     end
 end
@@ -904,6 +963,21 @@ function VehicleSyncSpec.updateLeader(vehicle, dt, settings)
     end
 end
 
+---Server: tells the operator of an idle vehicle whether joining would work (live.check)
+function VehicleSyncSpec.updateIdle(vehicle, dt, settings)
+    local spec = VehicleSyncSpec.getSpec(vehicle)
+    spec.liveTimer = spec.liveTimer - dt
+    if spec.liveTimer > 0 then
+        return
+    end
+    spec.liveTimer = VehicleSyncSpec.LIVE_UPDATE_INTERVAL
+    local _, reason = VehicleSyncSpec.checkConnect(vehicle, settings)
+    if reason ~= spec.live.check then
+        spec.live.check = reason
+        vehicle:raiseDirtyFlags(spec.dirtyFlag)
+    end
+end
+
 ---Server: follower rules; the actual driving happens in updateVehiclePhysics
 function VehicleSyncSpec.updateFollower(vehicle, dt, settings)
     local spec = VehicleSyncSpec.getSpec(vehicle)
@@ -921,15 +995,14 @@ function VehicleSyncSpec.updateFollower(vehicle, dt, settings)
         operatorSteering = false,
         operatorPedal = spec.operatorPedal,
         operatorCruise = spec.operatorCruise,
-        stopTimer = spec.stopTimer,
+        abortTimer = spec.abortTimer,
         leaderSpeed = 0,
         leaderCurvature = 0,
         cartFull = false,
     }
 
-    local geometry = nil
+    local geometry, leaderPose = nil, nil
     if leaderExists then
-        local leaderPose
         geometry, leaderPose = VehicleSyncSpec.buildGeometry(vehicle, leader, settings)
         ctx.geometry = geometry
         ctx.distance = geometry.distance
@@ -938,8 +1011,9 @@ function VehicleSyncSpec.updateFollower(vehicle, dt, settings)
         ctx.cartFull = VehicleSyncSpec.getReceiverFillRatio(spec.receiver) >= settings.cartFullThreshold
     end
 
-    local newState, reason, stopTimer = VehicleSyncController.evaluate(ctx, settings)
-    spec.stopTimer = stopTimer
+    local newState, reason, abortTimer, fault = VehicleSyncController.evaluate(ctx, settings)
+    spec.abortTimer = abortTimer
+    spec.fault = fault
     spec.operatorPedal = false
     spec.operatorCruise = false
 
@@ -954,7 +1028,16 @@ function VehicleSyncSpec.updateFollower(vehicle, dt, settings)
             spec.live.lateralError = geometry.lateralError
             spec.live.alongError = geometry.alongError
             spec.live.inZone = VehicleSyncController.isInOperationalZone(geometry, settings)
+            if spec.state == STATE.CONNECTED then
+                local _, engageReason = VehicleSyncSpec.checkEngage(vehicle, leader, geometry, leaderPose, settings)
+                spec.live.check = engageReason
+                spec.live.abortRemaining = 0
+            else
+                spec.live.check = spec.fault
+                spec.live.abortRemaining = spec.fault ~= REASON.NONE and math.max(0, settings.abortDelay - spec.abortTimer) or 0
+            end
             vehicle:raiseDirtyFlags(spec.dirtyFlag)
+            VehicleSyncSpec.showAbortWarning(vehicle)
         end
     end
 end
@@ -1082,6 +1165,8 @@ function VehicleSyncSpec:onWriteUpdateStream(streamId, connection, dirtyMask)
         streamWriteFloat32(streamId, spec.live.lateralError)
         streamWriteFloat32(streamId, spec.live.alongError)
         streamWriteBool(streamId, spec.live.inZone)
+        streamWriteUInt8(streamId, spec.live.check)
+        streamWriteFloat32(streamId, spec.live.abortRemaining)
     end
 end
 
@@ -1094,6 +1179,9 @@ function VehicleSyncSpec:onReadUpdateStream(streamId, timestamp, connection)
         spec.live.lateralError = streamReadFloat32(streamId)
         spec.live.alongError = streamReadFloat32(streamId)
         spec.live.inZone = streamReadBool(streamId)
+        spec.live.check = streamReadUInt8(streamId)
+        spec.live.abortRemaining = streamReadFloat32(streamId)
+        VehicleSyncSpec.showAbortWarning(self)
     end
 end
 

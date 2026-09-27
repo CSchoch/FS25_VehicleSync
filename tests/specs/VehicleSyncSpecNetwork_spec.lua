@@ -75,16 +75,22 @@ describe("VehicleSyncSpec network", function()
         it("sends the HUD values to clients when dirty", function()
             local follower = V.create({ networkId = 40 })
             local spec = Spec.getSpec(follower)
-            spec.live = { lateralError = 0.4, alongError = -1.2, inZone = true }
+            spec.live = { lateralError = 0.4, alongError = -1.2, inZone = true,
+                check = VehicleSyncController.REASON.LEADER_TURNING, abortRemaining = 2500 }
             local stream = engine.createStream()
             follower:onWriteUpdateStream(stream, engine.createConnection(false), spec.dirtyFlag)
 
-            local client = V.create({ networkId = 41, side = "client", isServer = false })
+            local client = V.create({ networkId = 41, side = "client", isServer = false, entered = true })
+            Spec.getSpec(client).state = STATE.TRACKING
             client:onReadUpdateStream(stream, 0, engine.createConnection(true))
             local clientSpec = Spec.getSpec(client)
             assert.near(0.4, clientSpec.live.lateralError)
             assert.near(-1.2, clientSpec.live.alongError)
             assert.is_true(clientSpec.live.inZone)
+            assert.equals(VehicleSyncController.REASON.LEADER_TURNING, clientSpec.live.check)
+            assert.equals(2500, clientSpec.live.abortRemaining)
+            -- the operator on the client sees the countdown too
+            assert.contains(g_currentMission.warnings, "Sync ends in 3 s: Harvester is turning")
         end)
         it("only writes a flag when not dirty", function()
             local follower = V.create({})

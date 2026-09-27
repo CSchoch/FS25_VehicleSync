@@ -18,7 +18,7 @@ VehicleSyncSettings.DEFINITIONS = {
     { name = "radioRange",          type = "number",  min = 50,   max = 5000 },
     { name = "connectRange",        type = "number",  min = 10,   max = 500 },
     { name = "maxLeaderCurvature",  type = "number",  min = 0.1,  max = 20 },
-    { name = "stopTimeout",         type = "number",  min = 0,    max = 60000 },
+    { name = "abortDelay",          type = "number",  min = 0,    max = 60000 },
     { name = "nudgeStepLateral",    type = "number",  min = 0.05, max = 2 },
     { name = "nudgeStepAlong",      type = "number",  min = 0.05, max = 2 },
     { name = "disengageOnCartFull", type = "boolean" },

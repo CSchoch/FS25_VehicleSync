@@ -14,8 +14,11 @@ local function getText(key)
     return g_i18n:getText(key)
 end
 
-local function live(lateral, along, inZone)
-    return { lateralError = lateral or 0, alongError = along or 0, inZone = inZone == true }
+local REASON = VehicleSyncController.REASON
+
+local function live(lateral, along, inZone, check, abortRemaining)
+    return { lateralError = lateral or 0, alongError = along or 0, inZone = inZone == true,
+        check = check or REASON.NONE, abortRemaining = abortRemaining or 0 }
 end
 
 local function follower(opts)
@@ -172,6 +175,52 @@ describe("VehicleSyncHudLayout", function()
             assert.is_nil(view.readout)
             assert.same({ "Open network" }, texts(view.buttons))
             assert.equals("TOGGLE_NETWORK", view.buttons[1].action)
+        end)
+        it("promises Engage only when the server's check passes", function()
+            local view = Layout.buildView(follower({ live = live(0, 0, true, REASON.ENGAGED) }), getText)
+            assert.equals("Ready to engage", view.readout.message)
+            assert.is_true(view.buttons[2].enabled)
+            view = Layout.buildView(follower({ live = live(0, 0, true, REASON.LEADER_SPEED_WINDOW) }), getText)
+            assert.equals("Harvester speed is outside the sync range", view.readout.message)
+            assert.is_false(view.buttons[2].enabled)
+            -- set home only needs the zone
+            assert.is_true(view.buttons[3].enabled)
+            view = Layout.buildView(follower({ live = live(30, 0, false, REASON.NOT_IN_ZONE) }), getText)
+            assert.equals("Not in the operational zone of the harvester", view.readout.message)
+        end)
+        it("counts a machine fault down instead of showing the deviation", function()
+            local view = Layout.buildView(follower({ state = STATE.TRACKING, live = live(0.2, 0, true, REASON.LEADER_TURNING, 2100) }), getText)
+            assert.equals("Ends in 3 s", view.stateText)
+            assert.equals(COLOR.WARNING, view.stateColor)
+            assert.equals("Harvester is turning", view.readout.message)
+            assert.is_true(view.readout.warning)
+            assert.is_true(view.buttons[2].enabled)
+            view = Layout.buildView(leader({ { state = STATE.ACQUIRING, home = { x = 7, z = 2 },
+                live = live(0, 0, true, REASON.LEADER_STOPPED, 4000) } }), getText)
+            assert.equals("Ends in 4 s", view.stateText)
+            assert.equals("Harvester stopped", view.readout.message)
+        end)
+        it("lets a tractor join only when the server's check passes", function()
+            local function tractor(check, nearest)
+                return Layout.buildView({ role = ROLE.TRACTOR, state = STATE.IDLE, stateText = "Off",
+                    live = live(0, 0, false, check), nearest = nearest }, getText)
+            end
+            local harvester = { name = "Harvester", distance = 99.6 }
+            local view = tractor(REASON.OUT_OF_RANGE, harvester)
+            assert.equals("Nearest network: Harvester, 100 m - drive closer to join", view.plan.empty)
+            assert.is_false(view.buttons[1].enabled)
+            view = tractor(REASON.CONNECTED, { name = "Harvester", distance = 20 })
+            assert.equals("Nearest network: Harvester, 20 m", view.plan.empty)
+            assert.is_true(view.buttons[1].enabled)
+            view = tractor(REASON.NOT_ALLOWED, harvester)
+            assert.equals("No access to this vehicle", view.plan.empty)
+            assert.is_false(view.buttons[1].enabled)
+            view = tractor(REASON.NETWORK_CLOSED, nil)
+            assert.equals("No open sync network nearby", view.plan.empty)
+            assert.is_false(view.buttons[1].enabled)
+            -- before the first server answer the nearest network decides
+            assert.is_false(tractor(REASON.NONE, nil).buttons[1].enabled)
+            assert.is_true(tractor(REASON.NONE, harvester).buttons[1].enabled)
         end)
         it("shows a tractor the nearest open network", function()
             local view = Layout.buildView({ role = ROLE.TRACTOR, state = STATE.IDLE, stateText = "Off", live = live(),
