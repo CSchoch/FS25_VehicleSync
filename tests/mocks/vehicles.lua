@@ -40,6 +40,9 @@ local function baseFunctions()
     function base:getIsEntered() return self.entered == true end
     function base:getIsControlled() return self.controlled == true end
     function base:getIsAIActive() return self.aiActive == true end
+    function base:getIsActiveForInput(_, activeForAI)
+        return self:getIsEntered() and (activeForAI == true or not self:getIsAIActive())
+    end
     function base:getIsMotorStarted() return self.motorStarted ~= false end
     function base:getChildVehicles() return self.childVehicles end
     function base:getSpeedLimit(onlyIfWorking) return self.speedLimit or 40, true end

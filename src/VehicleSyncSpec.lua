@@ -301,6 +301,7 @@ function VehicleSyncSpec:onLoad(savegame)
     spec.followers = {}
     spec.lastReason = REASON.NONE
     spec.actionEvents = {}
+    spec.wasAIActive = false
     spec.takeoverRequested = false
     spec.homeMarkerUntil = nil
 
@@ -901,6 +902,15 @@ end
 function VehicleSyncSpec:onUpdate(dt, isActiveForInput, isActiveForInputIgnoreSelection, isSelected)
     local spec = VehicleSyncSpec.getSpec(self)
 
+    -- a helper starting or stopping changes which actions are registered (only the terminal while it drives)
+    if self.isClient and self:getIsEntered() then
+        local isAIActive = self:getIsAIActive()
+        if isAIActive ~= spec.wasAIActive then
+            spec.wasAIActive = isAIActive
+            self:requestActionEventUpdate()
+        end
+    end
+
     if not self.isServer then
         -- clients resolve a leader that was not loaded yet when this vehicle was streamed
         if spec.pendingLeaderId ~= nil then
@@ -1196,10 +1206,6 @@ function VehicleSyncSpec:onRegisterActionEvents(isActiveForInput, isActiveForInp
     local spec = VehicleSyncSpec.getSpec(self)
     self:clearActionEventsTable(spec.actionEvents)
 
-    if not isActiveForInputIgnoreSelection then
-        return
-    end
-
     local function add(actionName, callback, text, priority)
         local inputAction = InputAction[actionName]
         if inputAction == nil then
@@ -1212,8 +1218,16 @@ function VehicleSyncSpec:onRegisterActionEvents(isActiveForInput, isActiveForInp
         end
     end
 
-    -- the terminal (the only action with a default key)
+    -- the terminal (the only action with a default key), also while a helper drives: the game then
+    -- reports the vehicle as not active for input, getIsActiveForInput(true, true) ignores the AI
+    local onlyTerminal = not isActiveForInputIgnoreSelection
+    if onlyTerminal and not self:getIsActiveForInput(true, true) then
+        return
+    end
     add("VS_TOGGLE_HUD", VehicleSyncSpec.actionEventToggleHud, "vs_action_toggleHud", GS_PRIO_NORMAL)
+    if onlyTerminal then
+        return
+    end
 
     -- leader actions
     if spec.networkEnabled or self:vsGetHasPipe() then

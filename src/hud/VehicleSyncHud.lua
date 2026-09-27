@@ -10,7 +10,8 @@
     - The open terminal reacts to the mouse whenever the cursor is visible, also when another mod
       (Courseplay, AutoDrive) showed it. Dragging the title bar moves it.
     - Right click hides the cursor (mouse look again), the terminal stays open.
-    - The close button closes the terminal. Leaving the vehicle closes it as well.
+    - The close button closes the terminal. Leaving the vehicle only hides it (and releases the
+      cursor): the terminal comes back, without the cursor, when the player enters that vehicle again.
 
     Buttons only send requests (vehicle:vsRequest), so the server stays authoritative. The layout
     and the view model live in VehicleSyncHudLayout; this file draws them with one overlay on the
@@ -34,6 +35,7 @@ VehicleSyncHud.MESSAGE_DURATION = 4000  -- ms a message stays in the banner
 function VehicleSyncHud:reset()
     self.isOpen = false
     self.vehicle = nil
+    self.openVehicles = {}  -- vehicles whose terminal was not closed with the close button
     self.cursorOwned = false
     self.lockedCameras = nil
     self.isDragging = false
@@ -61,16 +63,40 @@ function VehicleSyncHud:toggle(vehicle)
     end
     self.isOpen = true
     self.vehicle = vehicle
+    self.openVehicles[vehicle] = true
     self:setCursor(true)
 end
 
+---Close button: closes the terminal of this vehicle for good
 function VehicleSyncHud:close()
+    if self.vehicle ~= nil then
+        self.openVehicles[self.vehicle] = nil
+    end
+    self:suspend()
+end
+
+---Hides the terminal but keeps it open for its vehicle (left or deleted vehicle)
+function VehicleSyncHud:suspend()
     self:setCursor(false)
     self.isOpen = false
     self.vehicle = nil
     self.isDragging = false
     self.hoverId = nil
     self.message = nil
+end
+
+---Shows the terminal again (without the cursor) when the player sits in a vehicle whose terminal
+---was left open; forgets deleted vehicles
+function VehicleSyncHud:resume()
+    for vehicle in pairs(self.openVehicles) do
+        if not VehicleSyncSpec.isValidVehicle(vehicle) then
+            self.openVehicles[vehicle] = nil
+        elseif vehicle:getIsEntered() then
+            self.isOpen = true
+            self.vehicle = vehicle
+            return
+        end
+    end
 end
 
 ---Shows or hides the mouse cursor. A cursor this HUD did not show is never hidden.
@@ -299,13 +325,16 @@ function VehicleSyncHud.getUnits()
 end
 
 function VehicleSyncHud:draw()
-    if not self.isOpen then
-        return
-    end
     local vehicle = self.vehicle
-    if not VehicleSyncSpec.isValidVehicle(vehicle) or not vehicle:getIsEntered() then
-        self:close()
-        return
+    if self.isOpen and (not VehicleSyncSpec.isValidVehicle(vehicle) or not vehicle:getIsEntered()) then
+        self:suspend()
+    end
+    if not self.isOpen then
+        self:resume()
+        if not self.isOpen then
+            return
+        end
+        vehicle = self.vehicle
     end
     if self:getIsBlocked() then
         return

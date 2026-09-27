@@ -54,9 +54,12 @@ Key facts:
   `checkConnect` reason, CONNECTED = `checkEngage` reason, engaged = the fault counting down. The
   terminal only offers Join / Engage when that check passes; reset to NONE on every state change.
 - **Terminal (HUD):** only `VS_TOGGLE_HUD` (Left Alt + Y) has a default key; the other 9 actions are
-  declared without `<actionBinding>` (bindable in Controls). Alt+Y opens the terminal with the cursor,
+  declared without `<actionBinding>` (bindable in Controls). While a helper drives, the game passes
+  `isActiveForInputIgnoreSelection = false`; the spec then registers only `VS_TOGGLE_HUD`
+  (`getIsActiveForInput(true, true)`) and refreshes the actions itself when the helper starts/stops. Alt+Y opens the terminal with the cursor,
   or only brings the cursor back while it is open; right click hides the cursor; only the × button
-  (or leaving the vehicle) closes it. The open terminal reacts to the mouse whenever the cursor is
+  closes it. Leaving the vehicle only hides it (`suspend`, cursor released); the terminal stays
+  open per vehicle (`openVehicles`) and `draw` shows it again, without the cursor, on return. The open terminal reacts to the mouse whenever the cursor is
   visible (also when Courseplay / AutoDrive showed it); drag the title bar to move it. Closing hides
   only a cursor the HUD showed itself; `spec_enterable.cameras[].isRotatable` is locked while the
   HUD's cursor is on. Buttons call `vehicle:vsRequest`.
