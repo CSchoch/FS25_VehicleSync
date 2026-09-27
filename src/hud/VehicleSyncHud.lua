@@ -7,6 +7,8 @@
     Keys and mouse:
     - VS_TOGGLE_HUD (Left Alt + Y) opens the terminal with the mouse cursor. While it is open, the
       key only brings the cursor back; it never closes the terminal.
+    - The open terminal reacts to the mouse whenever the cursor is visible, also when another mod
+      (Courseplay, AutoDrive) showed it. Dragging the title bar moves it.
     - Right click hides the cursor (mouse look again), the terminal stays open.
     - The close button closes the terminal. Leaving the vehicle closes it as well.
 
@@ -73,13 +75,32 @@ end
 
 ---Shows or hides the mouse cursor. A cursor this HUD did not show is never hidden.
 function VehicleSyncHud:setCursor(show)
-    if show == self.cursorOwned then
-        return
+    if show then
+        -- someone else may have hidden it since: always make it visible again
+        if not g_inputBinding:getShowMouseCursor() then
+            g_inputBinding:setShowMouseCursor(true)
+        end
+        if not self.cursorOwned then
+            self.cursorOwned = true
+            self:lockCamera(true)
+        end
+    elseif self.cursorOwned then
+        self.cursorOwned = false
+        if g_inputBinding:getShowMouseCursor() then
+            g_inputBinding:setShowMouseCursor(false)
+        end
+        self:lockCamera(false)
+        self.isDragging = false
+        self.hoverId = nil
     end
-    self.cursorOwned = show
-    g_inputBinding:setShowMouseCursor(show)
-    self:lockCamera(show)
-    if not show then
+end
+
+---Right click: back to mouse look, whoever showed the cursor
+function VehicleSyncHud:hideCursor()
+    if self.cursorOwned then
+        self:setCursor(false)
+    else
+        g_inputBinding:setShowMouseCursor(false)
         self.isDragging = false
         self.hoverId = nil
     end
@@ -128,17 +149,19 @@ end
 -- ---------------------------------------------------------------------------
 
 function VehicleSyncHud:mouseEvent(posX, posY, isDown, isUp, button)
-    if not self.isOpen or not self.cursorOwned or self:getIsBlocked() then
+    if not self.isOpen or not g_inputBinding:getShowMouseCursor() or self:getIsBlocked() then
         return
     end
 
     if isDown and button == Input.MOUSE_BUTTON_RIGHT then
-        self:setCursor(false)
+        self:hideCursor()
         return
     end
 
     if self.isDragging then
-        if isUp and button == Input.MOUSE_BUTTON_LEFT then
+        -- a missed release (e.g. outside the window) ends the drag with the next press
+        local isLeft = button == Input.MOUSE_BUTTON_LEFT
+        if isLeft and (isUp or isDown) then
             self.isDragging = false
             self:savePosition()
             return

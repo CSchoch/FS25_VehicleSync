@@ -153,6 +153,7 @@ end
 g_inputBinding = { texts = {}, priorities = {} }
 function g_inputBinding:setActionEventText(id, text) self.texts[id] = text end
 function g_inputBinding:setActionEventTextPriority(id, prio) self.priorities[id] = prio end
+function g_inputBinding:getShowMouseCursor() return self.showMouseCursor == true end
 function g_inputBinding:setShowMouseCursor(show)
     self.showMouseCursor = show
     table.insert(self.cursorCalls, show)

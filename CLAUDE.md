@@ -56,8 +56,10 @@ Key facts:
 - **Terminal (HUD):** only `VS_TOGGLE_HUD` (Left Alt + Y) has a default key; the other 9 actions are
   declared without `<actionBinding>` (bindable in Controls). Alt+Y opens the terminal with the cursor,
   or only brings the cursor back while it is open; right click hides the cursor; only the × button
-  (or leaving the vehicle) closes it. The HUD hides only a cursor it showed itself and locks
-  `spec_enterable.cameras[].isRotatable` while the cursor is on. Buttons call `vehicle:vsRequest`.
+  (or leaving the vehicle) closes it. The open terminal reacts to the mouse whenever the cursor is
+  visible (also when Courseplay / AutoDrive showed it); drag the title bar to move it. Closing hides
+  only a cursor the HUD showed itself; `spec_enterable.cameras[].isRotatable` is locked while the
+  HUD's cursor is on. Buttons call `vehicle:vsRequest`.
 - Messages go through `VehicleSyncSpec.showNotification(text, isWarning, vehicle)`: while the
   terminal is open for that vehicle they appear in its banner (4 s), otherwise as game
   notifications; the blinking abort countdown is skipped while the terminal shows it.
