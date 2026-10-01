@@ -42,7 +42,9 @@ MULTIPLAYER:
 Everything is calculated on the server and synchronised to all players, including players joining a running game. Only vehicles of the same farm (or farms with access to each other) can sync. Only the player sitting in a vehicle can operate it.
 
 SERVER SETTINGS (console, saved with the savegame):
-vsSettings lists all settings, vsSet <name> <value> changes one, e.g. "vsSet maxSyncSpeed 20".]]>
+vsSettings lists all settings, vsSet <name> <value> changes one, e.g. "vsSet maxSyncSpeed 20".
+
+GitHub: https://github.com/CSchoch/FS25_VehicleSync]]>
         </en>
         <de>
 <![CDATA[Mit Fahrzeug Synchronisation übernimmt ein Drescher die Geschwindigkeit und Lenkung eines Traktors mit Überladewagen, damit während der Fahrt abgetankt werden kann - wie bei den Maschinen-Synchronisationssystemen moderner Betriebe. Der Mod ist für den Mehrspielermodus gemacht: ein Spieler fährt den Drescher, ein anderer sitzt im Traktor.
@@ -79,7 +81,9 @@ MEHRSPIELER:
 Alles wird auf dem Server berechnet und mit allen Spielern synchronisiert, auch mit Spielern, die einem laufenden Spiel beitreten. Nur Fahrzeuge desselben Betriebs (oder von Betrieben mit gegenseitigem Zugriff) können sich synchronisieren. Nur der Spieler im Fahrzeug kann es bedienen.
 
 SERVER-EINSTELLUNGEN (Konsole, werden mit dem Spielstand gespeichert):
-vsSettings listet alle Einstellungen, vsSet <Name> <Wert> ändert eine, z. B. "vsSet maxSyncSpeed 20".]]>
+vsSettings listet alle Einstellungen, vsSet <Name> <Wert> ändert eine, z. B. "vsSet maxSyncSpeed 20".
+
+GitHub: https://github.com/CSchoch/FS25_VehicleSync]]>
         </de>
     </description>
     <iconFilename>icon_VehicleSync.dds</iconFilename>

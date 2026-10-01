@@ -98,9 +98,12 @@ describe("modDesc.xml", function()
         end
     end)
 
-    it("contains no links, logos or brand names in the description (5.1 / 8.3)", function()
+    it("contains no links except the project's GitHub page, no logos or brand names (5.1 / 8.3)", function()
+        local github = "GitHub: https://github.com/CSchoch/FS25_VehicleSync"
         for _, lang in ipairs({ "en", "de" }) do
             local text = description(lang)
+            assert.is_not_nil(text:find(github, 1, true), "GitHub link in " .. lang)
+            text = text:gsub("https://github%.com/CSchoch/FS25_VehicleSync", "")
             assert.is_nil(text:lower():find("http", 1, true))
             assert.is_nil(text:lower():find("www.", 1, true))
             for _, brand in ipairs({ "deere", "claas", "case ih", "new holland", "fendt" }) do
