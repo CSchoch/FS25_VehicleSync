@@ -1,5 +1,6 @@
 dist/
 tests/coverage_report.txt
+__pycache__/
 
 # IDE / OS
 .idea/

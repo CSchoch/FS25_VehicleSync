@@ -86,3 +86,12 @@ Key facts:
 (found in `..\FS25_WorkflowManager\tools\texconv.exe`).
 `python tools/make_hud_icons.py` draws the terminal atlas `textures/hud_icons.dds` (4x4 cells of
 64 px, order must match `VehicleSyncHudLayout.ICON`; the solid cell is used for all rectangles).
+
+## README images
+
+- `docs/terminal.svg`: `lua tools/render_hud_preview.lua` renders three terminal states from the real
+  `buildView` / `layout` with the English texts (mirrors `VehicleSyncHud:render`). Re-run it after HUD
+  layout, colour or text changes.
+- `_art/social_preview.png` (1280x640): `python tools/make_social_preview.py`, uploaded by hand under
+  GitHub Settings > Social preview.
+- `README.md`, `docs/`, `.github/` stay out of the release zip (`create_release.ps1` include list).

@@ -1,0 +1,15 @@
+name: Feature request
+description: An idea for Vehicle Sync
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like Vehicle Sync to do?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why? In which situation would it help?
+      description: Real-world sync systems that already do this are a good reference

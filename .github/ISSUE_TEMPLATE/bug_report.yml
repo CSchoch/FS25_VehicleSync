@@ -1,0 +1,45 @@
+name: Bug report
+description: Something in Vehicle Sync does not work as described
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Mod version
+      description: Shown in the mod list of the game, e.g. 1.0.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Game mode
+      options:
+        - Singleplayer
+        - Multiplayer, I am the host
+        - Multiplayer, I joined a server
+        - Dedicated server
+    validations:
+      required: true
+  - type: input
+    id: vehicles
+    attributes:
+      label: Vehicles
+      description: Harvester and tractor / grain cart, including mod vehicles
+      placeholder: e.g. base game combine + tractor with a grain cart
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: Which terminal state was shown (Connected / Acquiring / Tracking), what you clicked or pressed
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: log.txt
+      description: Drag `Documents\My Games\FarmingSimulator2025\log.txt` into this field (from the session where it happened)
+  - type: textarea
+    id: mods
+    attributes:
+      label: Other mods
+      description: Especially mods that drive vehicles or show the mouse cursor (Courseplay, AutoDrive, ...)
