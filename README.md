@@ -15,6 +15,7 @@
   <img src="https://img.shields.io/badge/Farming%20Simulator-25-2C3438" alt="Farming Simulator 25">
   <img src="https://img.shields.io/badge/multiplayer-supported-8FB3D1" alt="Multiplayer supported">
   <img src="https://img.shields.io/badge/languages-EN%20%7C%20DE-7A8387" alt="English and German">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/CSchoch/FS25_VehicleSync?color=8FB3D1" alt="MIT license"></a>
 </p>
 
 <p align="center">
@@ -157,6 +158,10 @@ Plain Lua 5.1 with no dependencies. The engine is mocked, so every rule can be t
 The images are generated: `python tools/make_icon.py` (mod icon), `python tools/make_hud_icons.py`
 (terminal atlas), `python tools/make_social_preview.py` (GitHub card) and
 `lua tools/render_hud_preview.lua` (the terminal preview above, drawn from the real layout code).
+
+## License
+
+[MIT](LICENSE) © Christian Schoch
 
 ## Deutsch
 
