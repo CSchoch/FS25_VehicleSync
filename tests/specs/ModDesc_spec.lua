@@ -64,7 +64,7 @@ describe("modDesc.xml", function()
     it("uses the current descVersion and a four digit version", function()
         local descVersion = tonumber(modDesc:match('<modDesc descVersion="(%d+)"'))
         assert.is_not_nil(descVersion)
-        assert.is_true(descVersion >= 113)
+        assert.is_true(descVersion >= 115)
         assert.is_not_nil(modDesc:match("<version>%d+%.%d+%.%d+%.%d+</version>"))
     end)
 
