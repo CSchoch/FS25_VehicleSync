@@ -16,7 +16,7 @@ After every code change:
    `tests/run_tests.lua`, new source files to `SOURCE_FILES` there **and** to `tests/specs/ReleaseRules_spec.lua`'s count
 3. Before a release: `create_release.bat` (tests + `dist\FS25_VehicleSync.zip`), then
    `TestRunner_public.exe --noPause --disableAutoOpen --outputPath dist\testrunner --logPath dist\testrunner dist\FS25_VehicleSync.zip`
-   must PASS (`--logPath` takes a directory).
+   must PASS (`--logPath` takes a directory, which must already exist, or the runner crashes).
 
 ## Architecture
 
@@ -83,7 +83,8 @@ Key facts:
 - `PublicLuaCheck` is textual: no `pcall`, `xpcall`, `collectgarbage`, `load(` anywhere in `src/` -
   this includes names like `Settings.load()`; use `XMLFile.loadIfExists`.
 - `ObsoleteFiles` is textual: every file path must appear literally (no string concatenation).
-- `ModDescCheck`: the FS25 mod icon must be **512x512** (the ModHub guideline PDF v5.9.1 still says
+- `ModDescCheck`: `descVersion` must be exactly what the runner allows (116 since TestRunner 0.9.24,
+  2026-11; 115 fails); the FS25 mod icon must be **512x512** (the ModHub guideline PDF v5.9.1 still says
   256), BC1 without mipmaps; **no changelog** in the description of version 1.0.0.0, but a changelog
   is mandatory for every update.
 - `tests/specs/ModDesc_spec.lua` and `ReleaseRules_spec.lua` encode these rules plus the ModHub

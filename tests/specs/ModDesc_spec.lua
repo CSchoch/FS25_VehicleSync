@@ -64,7 +64,8 @@ describe("modDesc.xml", function()
     it("uses the current descVersion and a four digit version", function()
         local descVersion = tonumber(modDesc:match('<modDesc descVersion="(%d+)"'))
         assert.is_not_nil(descVersion)
-        assert.is_true(descVersion >= 115)
+        -- TestRunner 0.9.24 (2026-11) accepts exactly 116
+        assert.is_true(descVersion >= 116)
         assert.is_not_nil(modDesc:match("<version>%d+%.%d+%.%d+%.%d+</version>"))
     end)
 
