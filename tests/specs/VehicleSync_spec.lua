@@ -19,6 +19,10 @@ local function setupBootstrapMocks()
     function FSCareerMissionInfo.saveToXMLFile(self)
         FSCareerMissionInfo.saveCalls = FSCareerMissionInfo.saveCalls + 1
     end
+    FSBaseMission.connectionCalls = 0
+    function FSBaseMission.onConnectionFinishedLoading(self, connection)
+        FSBaseMission.connectionCalls = FSBaseMission.connectionCalls + 1
+    end
 
     local listeners = {}
     function addModEventListener(listener) table.insert(listeners, listener) end
@@ -103,12 +107,23 @@ describe("VehicleSync bootstrap", function()
         VehicleSync:deleteMap()
     end)
 
-    it("uses defaults and no console commands on clients", function()
-        VehicleSyncSettings.set("maxSyncSpeed", 30)
+    it("keeps the values the server sent and adds no console commands on clients", function()
+        VehicleSyncSettings.applyValues({ maxSyncSpeed = 30 })
         g_server = nil
         VehicleSync:loadMap("map.xml")
-        assert.equals(16, VehicleSyncSettings.values.maxSyncSpeed)
+        assert.equals(30, VehicleSyncSettings.values.maxSyncSpeed)
         assert.is_nil(commands.vsSettings)
+        VehicleSync:deleteMap()
+        assert.equals(16, VehicleSyncSettings.values.maxSyncSpeed)
+    end)
+
+    it("sends the settings to every player who finished joining", function()
+        local connection = engine.createConnection(false)
+        FSBaseMission.onConnectionFinishedLoading({}, connection, 0, 0, 0, 1)
+        assert.equals(1, FSBaseMission.connectionCalls)
+        assert.equals(1, #connection.sent)
+        assert.is_false(connection.sent[1].isRequest)
+        assert.equals(16, connection.sent[1].values.maxSyncSpeed)
     end)
 
     it("saves the settings with the career savegame on the server only", function()
@@ -145,7 +160,11 @@ describe("VehicleSync bootstrap", function()
         assert.contains(VehicleSync:consoleCommandSettings(), "maxSyncSpeed")
         assert.contains(VehicleSync:consoleCommandSet(nil, nil), "Usage")
         assert.contains(VehicleSync:consoleCommandSet("maxSyncSpeed", "abc"), "Error")
+        assert.equals(0, #g_server.broadcasts)
         assert.contains(VehicleSync:consoleCommandSet("maxSyncSpeed", "18"), "set to 18")
         assert.equals(18, VehicleSyncSettings.get().maxSyncSpeed)
+        -- every player's terminal shows the new value
+        assert.equals(1, #g_server.broadcasts)
+        assert.equals(18, g_server.broadcasts[1].values.maxSyncSpeed)
     end)
 end)

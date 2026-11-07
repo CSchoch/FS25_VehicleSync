@@ -251,9 +251,12 @@ describe("VehicleSyncHudLayout", function()
             assert.near(first.w, last.w)
             assert.near(lay.plan.x, first.x)
             assert.near(lay.plan.x + lay.plan.w, last.x + last.w)
-            assert.same({ "close", "header", "button1", "button2", "button3", "panel" },
-                { lay.hits[1].id, lay.hits[2].id, lay.hits[3].id, lay.hits[4].id, lay.hits[5].id, lay.hits[6].id })
-            assert.equals(view.buttons[2], lay.hits[4].button)
+            assert.same({ "close", "settings", "header", "button1", "button2", "button3", "panel" },
+                { lay.hits[1].id, lay.hits[2].id, lay.hits[3].id, lay.hits[4].id, lay.hits[5].id, lay.hits[6].id, lay.hits[7].id })
+            assert.equals(view.buttons[2], lay.hits[5].button)
+            -- the settings button sits left of the close button on the header
+            assert.near(lay.close.x, lay.settings.x + lay.settings.w)
+            assert.near(lay.header.y, lay.settings.y)
         end)
         it("uses a gap instead of the readout and a full width button without a readout", function()
             local view = Layout.buildView({ role = ROLE.HARVESTER, state = STATE.IDLE, live = live() }, getText)
@@ -321,11 +324,77 @@ describe("VehicleSyncHudLayout", function()
         end)
     end)
 
+    describe("settings page", function()
+        local function rows(canEdit)
+            return {
+                canEdit = canEdit,
+                rows = {
+                    { name = "maxSyncSpeed", type = "number", value = 16, decimals = 0, unit = "km/h", canDecrease = true, canIncrease = false },
+                    { name = "abortDelay", type = "number", value = 5000, decimals = 0, unit = "s", scale = 0.001, canDecrease = true, canIncrease = true },
+                    { name = "nudgeStepLateral", type = "number", value = 0.25, decimals = 2, unit = "m", canDecrease = false, canIncrease = true },
+                    { name = "disengageOnCartFull", type = "boolean", value = true, canDecrease = true, canIncrease = false },
+                    { name = "keepSpeedOnSteering", type = "boolean", value = false, canDecrease = false, canIncrease = true },
+                },
+            }
+        end
+
+        it("formats numbers with unit and scale, booleans as On / Off", function()
+            local view = Layout.buildSettingsView(rows(true), getText)
+            assert.same({ "16 km/h", "5 s", "0.25 m", "On", "Off" },
+                { view.rows[1].value, view.rows[2].value, view.rows[3].value, view.rows[4].value, view.rows[5].value })
+            assert.equals("Max. harvester speed", view.rows[1].label)
+            assert.equals("Server settings", view.stateText)
+            assert.equals(COLOR.STRAW, view.stateColor)
+            assert.is_true(view.settingsOpen)
+            assert.equals("Saved with the savegame", view.readout.message)
+        end)
+
+        it("offers a - / + stepper per setting, disabled at the range ends", function()
+            local view = Layout.buildSettingsView(rows(true), getText)
+            assert.equals(10, #view.buttons)
+            assert.same({ text = "-", setting = "maxSyncSpeed", direction = -1, enabled = true }, view.buttons[1])
+            assert.same({ text = "+", setting = "maxSyncSpeed", direction = 1, enabled = false }, view.buttons[2])
+            assert.is_false(view.buttons[5].enabled)
+            assert.is_true(view.buttons[6].enabled)
+        end)
+
+        it("is read only for players who are not admins", function()
+            local view = Layout.buildSettingsView(rows(false), getText)
+            for _, b in ipairs(view.buttons) do
+                assert.is_false(b.enabled)
+            end
+            assert.equals("Only admins can change the settings", view.readout.message)
+        end)
+
+        it("stacks one row per setting with the stepper on the right, the note below", function()
+            local view = Layout.buildSettingsView(rows(true), getText)
+            local lay = Layout.layout(view, 0.1, 0.9, UNIT_X, UNIT_Y)
+            local S = Layout.SIZE
+            assert.is_nil(lay.plan)
+            assert.equals(5, #lay.rows)
+            assert.near((S.HEADER + S.BAND + S.PADDING + 5 * S.SETTING_ROW + S.READOUT + S.PADDING) * UNIT_Y, lay.height)
+            assert.equals(10, #lay.buttons)
+            local row = lay.rows[2].rect
+            local minus, plus = lay.buttons[3].rect, lay.buttons[4].rect
+            assert.equals(view.buttons[3], lay.buttons[3].button)
+            assert.near(row.x + row.w, plus.x + plus.w)
+            assert.is_less(plus.x, minus.x + minus.w)
+            assert.near(row.y + row.h / 2, minus.y + minus.h / 2)
+            assert.is_less(minus.x, lay.rows[2].valueX)
+            assert.is_greater(row.y, lay.rows[1].rect.y)
+            -- messages appear over the first rows
+            assert.near(lay.rows[1].rect.y + lay.rows[1].rect.h, lay.banner.y + lay.banner.h)
+            assert.is_less(lay.rows[5].rect.y, lay.readout.y)
+        end)
+    end)
+
     describe("hit test and panel position", function()
         it("finds the close button before the header and nothing outside", function()
             local lay = Layout.layout(Layout.buildView(leader(), getText), 0, 1, UNIT_X, UNIT_Y)
             local close = lay.close
             assert.equals("close", Layout.hitTest(lay.hits, close.x + close.w / 2, close.y + close.h / 2).id)
+            local gear = lay.settings
+            assert.equals("settings", Layout.hitTest(lay.hits, gear.x + gear.w / 2, gear.y + gear.h / 2).id)
             assert.equals("header", Layout.hitTest(lay.hits, lay.header.x + 0.001, lay.header.y + 0.001).id)
             local b = lay.buttons[1].rect
             assert.equals("button1", Layout.hitTest(lay.hits, b.x + b.w / 2, b.y + b.h / 2).id)

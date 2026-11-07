@@ -137,7 +137,7 @@ describe("modDesc.xml", function()
             assert.is_not_nil(io.open(filename, "r"), filename)
             count = count + 1
         end
-        assert.equals(8, count)
+        assert.equals(9, count)
         assert.is_nil(modDesc:find("VehicleSyncSpec.lua\"", 1, true))
         assert.is_not_nil(io.open(VehicleSync and VehicleSync.SPEC_FILENAME or "src/VehicleSyncSpec.lua", "r"))
     end)
@@ -242,11 +242,13 @@ describe("translations", function()
     it("cover every l10n key used in the scripts", function()
         for _, file in ipairs(srcFiles()) do
             local source = readFile(file)
+            -- "vs_reason_" .. name / "vs_setting_" .. name are key prefixes, covered by the tests below
             for key in source:gmatch('getText%("([%w_]+)"') do
-                assert.is_not_nil(en[key], key .. " used in " .. file)
+                if key:sub(-1) ~= "_" then
+                    assert.is_not_nil(en[key], key .. " used in " .. file)
+                end
             end
             for key in source:gmatch('"(vs_[%w_]+)"') do
-                -- "vs_reason_" .. name is a key prefix, covered by the reason test below
                 if key:sub(-1) ~= "_" then
                     assert.is_not_nil(en[key], key .. " used in " .. file)
                 end
@@ -268,6 +270,12 @@ describe("translations", function()
         assert.is_nil(VehicleSyncController.getFaultTextKey(VehicleSyncController.REASON.NONE))
         for _, state in ipairs({ "idle", "connected", "acquiring", "tracking" }) do
             assert.is_not_nil(en["vs_state_" .. state])
+        end
+    end)
+
+    it("cover every server setting of the terminal", function()
+        for _, def in ipairs(VehicleSyncSettings.DEFINITIONS) do
+            assert.is_not_nil(en["vs_setting_" .. def.name], def.name)
         end
     end)
 end)

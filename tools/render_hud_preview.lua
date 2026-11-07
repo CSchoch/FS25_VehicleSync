@@ -18,6 +18,7 @@ local CAPTION = 34
 
 dofile("src/VehicleSyncMath.lua")
 dofile("src/VehicleSyncController.lua")
+dofile("src/VehicleSyncSettings.lua")
 dofile("src/hud/VehicleSyncHudLayout.lua")
 
 local L = VehicleSyncHudLayout
@@ -93,6 +94,7 @@ end
 local GLYPH_ID = {
     [ICON.HARVESTER] = "harvester", [ICON.CART] = "cart", [ICON.ARROW_UP] = "arrowUp", [ICON.ARROW_DOWN] = "arrowDown",
     [ICON.ARROW_LEFT] = "arrowLeft", [ICON.ARROW_RIGHT] = "arrowRight", [ICON.HOME] = "home", [ICON.CLOSE] = "close",
+    [ICON.GEAR] = "gear",
 }
 
 local function icon(glyph, centerX, centerY, w, h, color)
@@ -128,8 +130,20 @@ local GLYPHS = [[
 <symbol id="close" viewBox="0 0 64 64"><path d="M14 14L50 50M50 14L14 50" stroke="currentColor" stroke-width="8"/></symbol>
 ]]
 
+-- gear: eight teeth around a ring
+local teeth = {}
+for i = 0, 7 do
+    table.insert(teeth, string.format('<rect x="46" y="27" width="14" height="10" transform="rotate(%d 32 32)"/>', i * 45))
+end
+GLYPHS = GLYPHS .. string.format([[
+<mask id="m-gear" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+  <g fill="#fff"><circle cx="32" cy="32" r="20"/>%s</g><circle cx="32" cy="32" r="8" fill="#000"/>
+</mask>
+<symbol id="gear" viewBox="0 0 64 64"><rect width="64" height="64" fill="currentColor" mask="url(#m-gear)"/></symbol>
+]], table.concat(teeth))
+
 -- ---------------------------------------------------------------------------
--- Terminal (mirrors VehicleSyncHud:render, renderPlan, renderButton)
+-- Terminal (mirrors VehicleSyncHud:render, renderPlan, renderSettingRows, renderButton)
 -- ---------------------------------------------------------------------------
 
 local function renderPlan(plan, lay)
@@ -171,6 +185,19 @@ local function renderPlan(plan, lay)
     end
 end
 
+local function renderSettingRows(lay)
+    for i, item in ipairs(lay.rows) do
+        local r = item.rect
+        local centerY = r.y + r.h / 2
+        if i % 2 == 1 then
+            rect(r, L.withAlpha(C.BEZEL, 0.6))
+        end
+        local valueWidth = (item.valueX - r.x) * 0.35
+        text(r.x + S.PADDING / 2, centerY, S.TEXT_BODY, item.row.label, C.PAPER, "left", false, item.valueX - r.x - valueWidth - S.PADDING)
+        text(item.valueX, centerY, S.TEXT_BODY, item.row.value, C.PAPER, "right", true, valueWidth)
+    end
+end
+
 local function renderButton(item)
     local b, r = item.button, item.rect
     local face, ink = C.BEZEL, C.PAPER
@@ -197,8 +224,10 @@ local function renderTerminal(view, lay)
     rect(header, C.BEZEL)
     text(header.x + padX, headerY, S.TEXT_TITLE, view.title, C.PAPER, "left", true)
     if view.partner ~= nil then
-        text(lay.close.x, headerY, S.TEXT_BODY, view.partner, C.PAPER, "right", false, header.w / 2)
+        text(lay.settings.x, headerY, S.TEXT_BODY, view.partner, C.PAPER, "right", false, header.w / 2)
     end
+    icon(ICON.GEAR, lay.settings.x + lay.settings.w / 2, headerY, S.SETTINGS_ICON, S.SETTINGS_ICON,
+        view.settingsOpen and C.STRAW or C.PAPER)
     icon(ICON.CLOSE, lay.close.x + lay.close.w / 2, headerY, S.CLOSE_ICON, S.CLOSE_ICON, C.PAPER)
 
     local band = lay.band
@@ -210,7 +239,11 @@ local function renderTerminal(view, lay)
         text(band.x + band.w - padX, bandY, S.TEXT_BODY, view.fillText, C.PAPER, "right", true)
     end
 
-    renderPlan(view.plan, lay)
+    if lay.rows ~= nil then
+        renderSettingRows(lay)
+    else
+        renderPlan(view.plan, lay)
+    end
 
     if lay.readout ~= nil then
         local readout = lay.readout
@@ -262,11 +295,31 @@ local SCENES = {
         snapshot = { role = L.ROLE.LEADER, pipe = PIPE,
             followers = { { state = STATE.TRACKING, home = HOME, live = live(-0.21, 0.45), fillRatio = 0.62 } } },
     },
+    {
+        caption = "Gear button: server settings (admins)",
+        settings = true,
+    },
 }
+
+---Settings page with the default values, as an admin sees it (mirrors VehicleSyncHud.buildSettingsSnapshot)
+local function settingsSnapshot()
+    local snapshot = { canEdit = true, rows = {} }
+    for _, def in ipairs(VehicleSyncSettings.DEFINITIONS) do
+        table.insert(snapshot.rows, { name = def.name, type = def.type, value = VehicleSyncSettings.values[def.name],
+            decimals = def.decimals, unit = def.unit, scale = def.scale,
+            canDecrease = VehicleSyncSettings.canStep(def.name, -1), canIncrease = VehicleSyncSettings.canStep(def.name, 1) })
+    end
+    return snapshot
+end
 
 local panels, width, height = {}, MARGIN, 0
 for _, scene in ipairs(SCENES) do
-    local view = L.buildView(scene.snapshot, getText)
+    local view
+    if scene.settings then
+        view = L.buildSettingsView(settingsSnapshot(), getText)
+    else
+        view = L.buildView(scene.snapshot, getText)
+    end
     local lay = L.layout(view, 0, 0, 1, 1)
     table.insert(panels, { view = view, lay = lay, caption = scene.caption, left = width })
     width = width + lay.width * SCALE + MARGIN

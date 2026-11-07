@@ -1,9 +1,10 @@
 --[[
     VehicleSyncSettings
 
-    Server side settings of Vehicle Sync. The whole sync logic runs on the server, so only the
-    server needs these values: they are stored per savegame in "vehicleSync.xml" next to the
-    savegame files and can be changed with the console commands "vsSettings" / "vsSet".
+    Server side settings of Vehicle Sync. The whole sync logic runs on the server: the values are
+    stored per savegame in "vehicleSync.xml" next to the savegame files and can be changed in the
+    terminal (admins, see VehicleSyncSettingsEvent) or with the console commands "vsSettings" /
+    "vsSet". Clients receive a copy of the server values for the terminal.
 ]]
 
 ---@class VehicleSyncSettings
@@ -12,18 +13,21 @@ VehicleSyncSettings = {}
 VehicleSyncSettings.XML_FILENAME = "vehicleSync.xml"
 VehicleSyncSettings.XML_ROOT = "vehicleSync"
 
--- user facing settings: name -> {type, min, max}
+-- user facing settings: name, type, range, terminal step and display (value * scale, decimals, unit)
 VehicleSyncSettings.DEFINITIONS = {
-    { name = "maxSyncSpeed",        type = "number",  min = 4,    max = 40 },
-    { name = "radioRange",          type = "number",  min = 50,   max = 5000 },
-    { name = "connectRange",        type = "number",  min = 10,   max = 500 },
-    { name = "maxLeaderCurvature",  type = "number",  min = 0.1,  max = 20 },
-    { name = "abortDelay",          type = "number",  min = 0,    max = 60000 },
-    { name = "nudgeStepLateral",    type = "number",  min = 0.05, max = 2 },
-    { name = "nudgeStepAlong",      type = "number",  min = 0.05, max = 2 },
+    { name = "maxSyncSpeed",        type = "number",  min = 4,    max = 40,    step = 1,    decimals = 0, unit = "km/h" },
+    { name = "radioRange",          type = "number",  min = 50,   max = 5000,  step = 50,   decimals = 0, unit = "m" },
+    { name = "connectRange",        type = "number",  min = 10,   max = 500,   step = 5,    decimals = 0, unit = "m" },
+    { name = "maxLeaderCurvature",  type = "number",  min = 0.1,  max = 20,    step = 0.1,  decimals = 1, unit = "°/m" },
+    { name = "abortDelay",          type = "number",  min = 0,    max = 60000, step = 1000, decimals = 0, unit = "s", scale = 0.001 },
+    { name = "nudgeStepLateral",    type = "number",  min = 0.05, max = 2,     step = 0.05, decimals = 2, unit = "m" },
+    { name = "nudgeStepAlong",      type = "number",  min = 0.05, max = 2,     step = 0.05, decimals = 2, unit = "m" },
     { name = "disengageOnCartFull", type = "boolean" },
     { name = "keepSpeedOnSteering", type = "boolean" },
 }
+
+-- values closer than this count as equal (clients receive Float32 copies)
+VehicleSyncSettings.EPSILON = 1e-4
 
 VehicleSyncSettings.values = {}
 
@@ -90,6 +94,62 @@ function VehicleSyncSettings.set(name, value)
     VehicleSyncSettings.values[name] = parsed
     VehicleSyncSettings.cached = nil
     return true, nil
+end
+
+---Index of a setting in DEFINITIONS (network id) or nil
+function VehicleSyncSettings.getIndex(name)
+    for index, def in ipairs(VehicleSyncSettings.DEFINITIONS) do
+        if def.name == name then
+            return index
+        end
+    end
+    return nil
+end
+
+---Value one terminal step further: numbers move by `step` on its grid within the range,
+-- booleans are switched on (direction > 0) or off
+---@param direction number 1 or -1
+---@return any|nil value nil for unknown settings
+function VehicleSyncSettings.getStepped(name, direction)
+    local def = VehicleSyncSettings.getDefinition(name)
+    if def == nil then
+        return nil
+    end
+    if def.type == "boolean" then
+        return direction > 0
+    end
+    local value = VehicleSyncSettings.values[name]
+    local stepped = math.floor((value + direction * def.step) / def.step + 0.5) * def.step
+    return math.max(def.min, math.min(def.max, stepped))
+end
+
+---True if a step in this direction changes the value
+function VehicleSyncSettings.canStep(name, direction)
+    local stepped = VehicleSyncSettings.getStepped(name, direction)
+    local value = VehicleSyncSettings.values[name]
+    if type(stepped) == "number" then
+        return math.abs(stepped - value) > VehicleSyncSettings.EPSILON
+    end
+    return stepped ~= nil and stepped ~= value
+end
+
+---Moves a setting one terminal step (server)
+---@return boolean changed
+function VehicleSyncSettings.step(name, direction)
+    if not VehicleSyncSettings.canStep(name, direction) then
+        return false
+    end
+    return (VehicleSyncSettings.set(name, VehicleSyncSettings.getStepped(name, direction)))
+end
+
+---Takes over the values the server sent (client); missing values keep their current value
+function VehicleSyncSettings.applyValues(values)
+    for _, def in ipairs(VehicleSyncSettings.DEFINITIONS) do
+        if values[def.name] ~= nil then
+            VehicleSyncSettings.values[def.name] = values[def.name]
+        end
+    end
+    VehicleSyncSettings.cached = nil
 end
 
 ---Returns the savegame settings path or nil if no savegame directory exists yet

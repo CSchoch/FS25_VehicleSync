@@ -65,7 +65,8 @@ function VehicleSyncStateEvent:readStream(streamId, connection)
     if not self.isFeedback then
         self.state = streamReadUIntN(streamId, VehicleSyncController.NUM_STATE_BITS)
         if self.state ~= VehicleSyncController.STATE.IDLE then
-            self.leader = NetworkUtil.readNodeObject(streamId)
+            -- only the id: the leader may not exist on this client yet
+            self.leaderId = NetworkUtil.readNodeObjectId(streamId)
         end
         self.homeIsAuto = true
         if streamReadBool(streamId) then
@@ -90,7 +91,7 @@ function VehicleSyncStateEvent:run(connection)
     end
 
     local wasNetworkEnabled = self.vehicle:vsGetNetworkEnabled()
-    self.vehicle:vsApplyState(self.state, self.leader, self.home, self.homeIsAuto, self.networkEnabled, self.reason)
+    VehicleSyncSpec.applyReceivedState(self.vehicle, self.state, self.leaderId, self.home, self.homeIsAuto, self.networkEnabled, self.reason)
     if wasNetworkEnabled ~= self.networkEnabled then
         VehicleSyncSpec.showLeaderNetworkText(self.vehicle, self.networkEnabled)
     end

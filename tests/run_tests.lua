@@ -35,6 +35,7 @@ local SOURCE_FILES = {
     "src/VehicleSyncSettings.lua",
     "src/network/VehicleSyncStateEvent.lua",
     "src/network/VehicleSyncRequestEvent.lua",
+    "src/network/VehicleSyncSettingsEvent.lua",
     "src/VehicleSyncSpec.lua",
     "src/hud/VehicleSyncHudLayout.lua",
     "src/hud/VehicleSyncHud.lua",

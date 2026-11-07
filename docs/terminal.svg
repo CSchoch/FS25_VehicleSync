@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1504" height="566" viewBox="0 0 1504 566" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="2000" height="566" viewBox="0 0 2000 566" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif">
 <title>Vehicle Sync terminal</title>
 <defs><mask id="m-harvester" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
   <rect x="6" y="5" width="52" height="8" rx="2" fill="#fff"/><rect x="27" y="12" width="10" height="7" fill="#fff"/>
@@ -19,12 +19,17 @@
 <symbol id="home" viewBox="0 0 64 64"><g stroke="currentColor" stroke-width="5" fill="none"><circle cx="32" cy="32" r="16.5"/>
   <path d="M32 4V22M32 42V60M4 32H22M42 32H60"/></g></symbol>
 <symbol id="close" viewBox="0 0 64 64"><path d="M14 14L50 50M50 14L14 50" stroke="currentColor" stroke-width="8"/></symbol>
+<mask id="m-gear" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+  <g fill="#fff"><circle cx="32" cy="32" r="20"/><rect x="46" y="27" width="14" height="10" transform="rotate(0 32 32)"/><rect x="46" y="27" width="14" height="10" transform="rotate(45 32 32)"/><rect x="46" y="27" width="14" height="10" transform="rotate(90 32 32)"/><rect x="46" y="27" width="14" height="10" transform="rotate(135 32 32)"/><rect x="46" y="27" width="14" height="10" transform="rotate(180 32 32)"/><rect x="46" y="27" width="14" height="10" transform="rotate(225 32 32)"/><rect x="46" y="27" width="14" height="10" transform="rotate(270 32 32)"/><rect x="46" y="27" width="14" height="10" transform="rotate(315 32 32)"/></g><circle cx="32" cy="32" r="8" fill="#000"/>
+</mask>
+<symbol id="gear" viewBox="0 0 64 64"><rect width="64" height="64" fill="currentColor" mask="url(#m-gear)"/></symbol>
 </defs>
 <g transform="translate(16.00 16) scale(1.50)">
 <rect x="0.00" y="-0.00" width="320.00" height="308.00" fill="#1B2124" fill-opacity="0.90"/>
 <rect x="0.00" y="-0.00" width="320.00" height="26.00" fill="#2C3438"/>
 <text x="8.00" y="13.00" font-size="13.00" text-anchor="start" dominant-baseline="central" font-weight="600" fill="#ECE8DC">Vehicle Sync</text>
-<text x="294.00" y="13.00" font-size="12.00" text-anchor="end" dominant-baseline="central" fill="#ECE8DC">Harvester</text>
+<text x="268.00" y="13.00" font-size="12.00" text-anchor="end" dominant-baseline="central" fill="#ECE8DC">Harvester</text>
+<g transform="translate(273.00 5.00) scale(0.2500 0.2500)" color="#ECE8DC" opacity="1.00"><use href="#gear" width="64" height="64"/></g>
 <g transform="translate(301.00 7.00) scale(0.1875 0.1875)" color="#ECE8DC" opacity="1.00"><use href="#close" width="64" height="64"/></g>
 <rect x="0.00" y="26.00" width="320.00" height="32.00" fill="#8FB3D1" fill-opacity="0.18"/>
 <rect x="0.00" y="26.00" width="6.00" height="32.00" fill="#8FB3D1"/>
@@ -54,7 +59,8 @@
 <rect x="0.00" y="-0.00" width="320.00" height="308.00" fill="#1B2124" fill-opacity="0.90"/>
 <rect x="0.00" y="-0.00" width="320.00" height="26.00" fill="#2C3438"/>
 <text x="8.00" y="13.00" font-size="13.00" text-anchor="start" dominant-baseline="central" font-weight="600" fill="#ECE8DC">Vehicle Sync</text>
-<text x="294.00" y="13.00" font-size="12.00" text-anchor="end" dominant-baseline="central" fill="#ECE8DC">Harvester</text>
+<text x="268.00" y="13.00" font-size="12.00" text-anchor="end" dominant-baseline="central" fill="#ECE8DC">Harvester</text>
+<g transform="translate(273.00 5.00) scale(0.2500 0.2500)" color="#ECE8DC" opacity="1.00"><use href="#gear" width="64" height="64"/></g>
 <g transform="translate(301.00 7.00) scale(0.1875 0.1875)" color="#ECE8DC" opacity="1.00"><use href="#close" width="64" height="64"/></g>
 <rect x="0.00" y="26.00" width="320.00" height="32.00" fill="#7FBF6A" fill-opacity="0.18"/>
 <rect x="0.00" y="26.00" width="6.00" height="32.00" fill="#7FBF6A"/>
@@ -89,7 +95,8 @@
 <rect x="0.00" y="-0.00" width="320.00" height="344.00" fill="#1B2124" fill-opacity="0.90"/>
 <rect x="0.00" y="-0.00" width="320.00" height="26.00" fill="#2C3438"/>
 <text x="8.00" y="13.00" font-size="13.00" text-anchor="start" dominant-baseline="central" font-weight="600" fill="#ECE8DC">Vehicle Sync</text>
-<text x="294.00" y="13.00" font-size="12.00" text-anchor="end" dominant-baseline="central" fill="#ECE8DC">Carts: 1</text>
+<text x="268.00" y="13.00" font-size="12.00" text-anchor="end" dominant-baseline="central" fill="#ECE8DC">Carts: 1</text>
+<g transform="translate(273.00 5.00) scale(0.2500 0.2500)" color="#ECE8DC" opacity="1.00"><use href="#gear" width="64" height="64"/></g>
 <g transform="translate(301.00 7.00) scale(0.1875 0.1875)" color="#ECE8DC" opacity="1.00"><use href="#close" width="64" height="64"/></g>
 <rect x="0.00" y="26.00" width="320.00" height="32.00" fill="#7FBF6A" fill-opacity="0.18"/>
 <rect x="0.00" y="26.00" width="6.00" height="32.00" fill="#7FBF6A"/>
@@ -126,4 +133,75 @@
 <g transform="translate(288.00 312.00) scale(0.2813 0.2813)" color="#ECE8DC" opacity="1.00"><use href="#arrowRight" width="64" height="64"/></g>
 </g>
 <text x="1248.00" y="553.00" font-size="14" text-anchor="middle" fill="#8B949E">Harvester: nudge or release the cart</text>
+<g transform="translate(1504.00 16) scale(1.50)">
+<rect x="0.00" y="-0.00" width="320.00" height="332.00" fill="#1B2124" fill-opacity="0.90"/>
+<rect x="0.00" y="-0.00" width="320.00" height="26.00" fill="#2C3438"/>
+<text x="8.00" y="13.00" font-size="13.00" text-anchor="start" dominant-baseline="central" font-weight="600" fill="#ECE8DC">Vehicle Sync</text>
+<g transform="translate(273.00 5.00) scale(0.2500 0.2500)" color="#D6B85A" opacity="1.00"><use href="#gear" width="64" height="64"/></g>
+<g transform="translate(301.00 7.00) scale(0.1875 0.1875)" color="#ECE8DC" opacity="1.00"><use href="#close" width="64" height="64"/></g>
+<rect x="0.00" y="26.00" width="320.00" height="32.00" fill="#D6B85A" fill-opacity="0.18"/>
+<rect x="0.00" y="26.00" width="6.00" height="32.00" fill="#D6B85A"/>
+<text x="14.00" y="42.00" font-size="17.00" text-anchor="start" dominant-baseline="central" font-weight="600" fill="#ECE8DC">Server settings</text>
+<rect x="8.00" y="66.00" width="304.00" height="26.00" fill="#2C3438" fill-opacity="0.60"/>
+<text x="12.00" y="79.00" font-size="12.00" text-anchor="start" dominant-baseline="central" fill="#ECE8DC">Max. harvester speed</text>
+<text x="256.00" y="79.00" font-size="12.00" text-anchor="end" dominant-baseline="central" font-weight="600" fill="#ECE8DC">16 km/h</text>
+<text x="12.00" y="105.00" font-size="12.00" text-anchor="start" dominant-baseline="central" fill="#ECE8DC">Radio range</text>
+<text x="256.00" y="105.00" font-size="12.00" text-anchor="end" dominant-baseline="central" font-weight="600" fill="#ECE8DC">500 m</text>
+<rect x="8.00" y="118.00" width="304.00" height="26.00" fill="#2C3438" fill-opacity="0.60"/>
+<text x="12.00" y="131.00" font-size="12.00" text-anchor="start" dominant-baseline="central" fill="#ECE8DC">Join distance</text>
+<text x="256.00" y="131.00" font-size="12.00" text-anchor="end" dominant-baseline="central" font-weight="600" fill="#ECE8DC">60 m</text>
+<text x="12.00" y="157.00" font-size="12.00" text-anchor="start" dominant-baseline="central" fill="#ECE8DC">Max. harvester turning</text>
+<text x="256.00" y="157.00" font-size="12.00" text-anchor="end" dominant-baseline="central" font-weight="600" fill="#ECE8DC">0.5 °/m</text>
+<rect x="8.00" y="170.00" width="304.00" height="26.00" fill="#2C3438" fill-opacity="0.60"/>
+<text x="12.00" y="183.00" font-size="11.56" text-anchor="start" dominant-baseline="central" fill="#ECE8DC">Delay before a fault ends</text>
+<text x="256.00" y="183.00" font-size="12.00" text-anchor="end" dominant-baseline="central" font-weight="600" fill="#ECE8DC">5 s</text>
+<text x="12.00" y="209.00" font-size="12.00" text-anchor="start" dominant-baseline="central" fill="#ECE8DC">Nudge step left/right</text>
+<text x="256.00" y="209.00" font-size="12.00" text-anchor="end" dominant-baseline="central" font-weight="600" fill="#ECE8DC">0.25 m</text>
+<rect x="8.00" y="222.00" width="304.00" height="26.00" fill="#2C3438" fill-opacity="0.60"/>
+<text x="12.00" y="235.00" font-size="12.00" text-anchor="start" dominant-baseline="central" fill="#ECE8DC">Nudge step fore/aft</text>
+<text x="256.00" y="235.00" font-size="12.00" text-anchor="end" dominant-baseline="central" font-weight="600" fill="#ECE8DC">0.25 m</text>
+<text x="12.00" y="261.00" font-size="11.56" text-anchor="start" dominant-baseline="central" fill="#ECE8DC">End when the cart is full</text>
+<text x="256.00" y="261.00" font-size="12.00" text-anchor="end" dominant-baseline="central" font-weight="600" fill="#ECE8DC">On</text>
+<rect x="8.00" y="274.00" width="304.00" height="26.00" fill="#2C3438" fill-opacity="0.60"/>
+<text x="12.00" y="287.00" font-size="12.00" text-anchor="start" dominant-baseline="central" fill="#ECE8DC">Keep speed on steering</text>
+<text x="256.00" y="287.00" font-size="12.00" text-anchor="end" dominant-baseline="central" font-weight="600" fill="#ECE8DC">On</text>
+<text x="8.00" y="312.00" font-size="12.00" text-anchor="start" dominant-baseline="central" fill="#ECE8DC">Saved with the savegame</text>
+<rect x="262.00" y="68.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="273.00" y="79.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">-</text>
+<rect x="290.00" y="68.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="301.00" y="79.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">+</text>
+<rect x="262.00" y="94.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="273.00" y="105.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">-</text>
+<rect x="290.00" y="94.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="301.00" y="105.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">+</text>
+<rect x="262.00" y="120.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="273.00" y="131.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">-</text>
+<rect x="290.00" y="120.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="301.00" y="131.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">+</text>
+<rect x="262.00" y="146.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="273.00" y="157.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">-</text>
+<rect x="290.00" y="146.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="301.00" y="157.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">+</text>
+<rect x="262.00" y="172.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="273.00" y="183.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">-</text>
+<rect x="290.00" y="172.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="301.00" y="183.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">+</text>
+<rect x="262.00" y="198.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="273.00" y="209.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">-</text>
+<rect x="290.00" y="198.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="301.00" y="209.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">+</text>
+<rect x="262.00" y="224.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="273.00" y="235.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">-</text>
+<rect x="290.00" y="224.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="301.00" y="235.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">+</text>
+<rect x="262.00" y="250.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="273.00" y="261.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">-</text>
+<rect x="290.00" y="250.00" width="22.00" height="22.00" fill="#2C3438" fill-opacity="0.50"/>
+<text x="301.00" y="261.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC" fill-opacity="0.35">+</text>
+<rect x="262.00" y="276.00" width="22.00" height="22.00" fill="#2C3438"/>
+<text x="273.00" y="287.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC">-</text>
+<rect x="290.00" y="276.00" width="22.00" height="22.00" fill="#2C3438" fill-opacity="0.50"/>
+<text x="301.00" y="287.00" font-size="12.00" text-anchor="middle" dominant-baseline="central" font-weight="600" fill="#ECE8DC" fill-opacity="0.35">+</text>
+</g>
+<text x="1744.00" y="553.00" font-size="14" text-anchor="middle" fill="#8B949E">Gear button: server settings (admins)</text>
 </svg>

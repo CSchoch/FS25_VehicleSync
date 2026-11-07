@@ -35,14 +35,14 @@ TERMINAL AND HOTKEYS:
 - Left Alt + Y: open the terminal with the mouse cursor; while it is open, bring the mouse cursor back
 - Right click: hide the mouse cursor (look around again), the terminal stays open
 - Drag the title bar to move the terminal, the position is kept
-- The X button in the title bar closes the terminal
+- The gear button in the title bar shows the server settings, the X button closes the terminal
 All other functions (open / close network, join / leave, engage / disengage, set home point, nudge, release) have no default key. They can be bound in the Controls settings under "Vehicle Sync".
 
 MULTIPLAYER:
 Everything is calculated on the server and synchronised to all players, including players joining a running game. Only vehicles of the same farm (or farms with access to each other) can sync. Only the player sitting in a vehicle can operate it.
 
-SERVER SETTINGS (console, saved with the savegame):
-vsSettings lists all settings, vsSet <name> <value> changes one, e.g. "vsSet maxSyncSpeed 20".
+SERVER SETTINGS:
+The gear button of the terminal shows the settings the server uses: maximum harvester speed (16 km/h above), radio range, join distance, maximum harvester turning, delay before a fault ends the sync (5 seconds above), nudge steps, ending the sync when the cart is full and keeping the speed on steering. Every player sees them; only admins (or the host) can change them with the - / + buttons, also on a dedicated server. They are saved with the savegame. In the console of the server: vsSettings lists all settings, vsSet <name> <value> changes one, e.g. "vsSet maxSyncSpeed 20".
 
 GitHub: https://github.com/CSchoch/FS25_VehicleSync]]>
         </en>
@@ -74,14 +74,14 @@ TERMINAL UND TASTENBELEGUNG:
 - Linke Alt + Y: Terminal mit Mauszeiger öffnen; ist es offen, den Mauszeiger zurückholen
 - Rechtsklick: Mauszeiger ausblenden (wieder umsehen), das Terminal bleibt offen
 - Die Titelleiste ziehen, um das Terminal zu verschieben; die Position bleibt erhalten
-- Die X-Schaltfläche in der Titelleiste schließt das Terminal
+- Die Zahnrad-Schaltfläche in der Titelleiste zeigt die Server-Einstellungen, die X-Schaltfläche schließt das Terminal
 Alle anderen Funktionen (Netzwerk öffnen / schließen, beitreten / verlassen, aktivieren / beenden, Heimposition setzen, versetzen, freigeben) haben keine Standardtaste. Sie können in den Steuerungseinstellungen unter "Fahrzeug Sync" belegt werden.
 
 MEHRSPIELER:
 Alles wird auf dem Server berechnet und mit allen Spielern synchronisiert, auch mit Spielern, die einem laufenden Spiel beitreten. Nur Fahrzeuge desselben Betriebs (oder von Betrieben mit gegenseitigem Zugriff) können sich synchronisieren. Nur der Spieler im Fahrzeug kann es bedienen.
 
-SERVER-EINSTELLUNGEN (Konsole, werden mit dem Spielstand gespeichert):
-vsSettings listet alle Einstellungen, vsSet <Name> <Wert> ändert eine, z. B. "vsSet maxSyncSpeed 20".
+SERVER-EINSTELLUNGEN:
+Die Zahnrad-Schaltfläche des Terminals zeigt die Einstellungen des Servers: maximale Dreschergeschwindigkeit (oben 16 km/h), Funkreichweite, Beitrittsentfernung, maximale Drescherkurve, Verzögerung bis eine Störung die Synchronisation beendet (oben 5 Sekunden), Versatzschritte, Beenden bei vollem Wagen und Tempo beim Lenken halten. Alle Spieler sehen sie; nur Administratoren (oder der Host) können sie mit den Schaltflächen - / + ändern, auch auf einem dedizierten Server. Sie werden mit dem Spielstand gespeichert. In der Konsole des Servers: vsSettings listet alle Einstellungen, vsSet <Name> <Wert> ändert eine, z. B. "vsSet maxSyncSpeed 20".
 
 GitHub: https://github.com/CSchoch/FS25_VehicleSync]]>
         </de>
@@ -98,6 +98,7 @@ GitHub: https://github.com/CSchoch/FS25_VehicleSync]]>
         <sourceFile filename="src/VehicleSyncSettings.lua" />
         <sourceFile filename="src/network/VehicleSyncRequestEvent.lua" />
         <sourceFile filename="src/network/VehicleSyncStateEvent.lua" />
+        <sourceFile filename="src/network/VehicleSyncSettingsEvent.lua" />
         <sourceFile filename="src/hud/VehicleSyncHudLayout.lua" />
         <sourceFile filename="src/hud/VehicleSyncHud.lua" />
         <sourceFile filename="src/VehicleSync.lua" />

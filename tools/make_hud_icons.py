@@ -7,13 +7,14 @@ The atlas is a 4x4 grid of 64 px cells with white glyphs on transparent backgrou
 them with Overlay:setColor. Cell order must match VehicleSyncHudLayout.ICON:
     row 0: harvester, cart, arrow up, arrow down
     row 1: arrow left, arrow right, home crosshair, close
-    row 2: solid white (used for all plain rectangles)
+    row 2: solid white (used for all plain rectangles), gear (settings)
 
 Needs Pillow and texconv.exe (DirectXTex), see tools/make_icon.py.
 
 Usage:  python tools/make_hud_icons.py
 """
 
+import math
 import subprocess
 import sys
 from pathlib import Path
@@ -104,6 +105,17 @@ def solid(c):
     c.rect(0, 0, 64, 64)
 
 
+def gear(c):
+    cx = cy = 32
+    for i in range(8):
+        a = i * math.pi / 4
+        # tooth: a bar from the body to the outer radius, 10 px wide
+        corners = [(14, -5), (28, -5), (28, 5), (14, 5)]
+        c.poly([(cx + r * math.cos(a) - t * math.sin(a), cy + r * math.sin(a) + t * math.cos(a)) for r, t in corners])
+    c.d.ellipse([c.p(cx - 20, cy - 20), c.p(cx + 20, cy + 20)], fill=WHITE)
+    c.d.ellipse([c.p(cx - 8, cy - 8), c.p(cx + 8, cy + 8)], fill=CLEAR)
+
+
 def draw():
     size = CELL * GRID * SS
     img = Image.new("RGBA", (size, size), CLEAR)
@@ -117,6 +129,7 @@ def draw():
     home(Cell(d, 2, 1))
     close(Cell(d, 3, 1))
     solid(Cell(d, 0, 2))
+    gear(Cell(d, 1, 2))
 
     return img.resize((CELL * GRID, CELL * GRID), Image.LANCZOS)
 

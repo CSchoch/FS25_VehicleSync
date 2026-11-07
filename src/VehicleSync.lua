@@ -2,8 +2,8 @@
     VehicleSync
 
     Mod entry point: registers the vehicle specialization for every drivable vehicle type,
-    loads / saves the server settings with the savegame, provides the console commands and
-    forwards draw / mouse events to the terminal (VehicleSyncHud).
+    loads / saves the server settings with the savegame, sends them to joining players, provides
+    the console commands and forwards draw / mouse events to the terminal (VehicleSyncHud).
 ]]
 
 ---@class VehicleSync
@@ -50,6 +50,8 @@ function VehicleSync.init()
 
     TypeManager.validateTypes = Utils.prependedFunction(TypeManager.validateTypes, VehicleSync.addSpecializationToVehicleTypes)
     FSCareerMissionInfo.saveToXMLFile = Utils.appendedFunction(FSCareerMissionInfo.saveToXMLFile, VehicleSync.onSaveCareerMissionInfo)
+    FSBaseMission.onConnectionFinishedLoading = Utils.appendedFunction(FSBaseMission.onConnectionFinishedLoading,
+        VehicleSyncSettingsEvent.onConnectionFinishedLoading)
 end
 
 ---Mod event: map loaded
@@ -61,9 +63,8 @@ function VehicleSync:loadMap(filename)
             addConsoleCommand("vsSet", "Changes a Vehicle Sync setting: vsSet <name> <value>", "consoleCommandSet", VehicleSync)
             VehicleSync.consoleCommandsAdded = true
         end
-    else
-        VehicleSyncSettings.reset()
     end
+    -- clients keep their values: the server sends its settings when the player joined
     VehicleSyncHud:loadPosition()
 end
 
@@ -107,6 +108,7 @@ function VehicleSync:consoleCommandSet(name, value)
     if not ok then
         return "Error: " .. errorText
     end
+    VehicleSyncSettingsEvent.broadcast()
     return string.format("Vehicle Sync: '%s' set to %s (saved with the next savegame)", name, tostring(VehicleSyncSettings.values[name]))
 end
 

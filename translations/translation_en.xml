@@ -55,6 +55,20 @@
         <text name="vs_hud_ready" text="Ready to engage"/>
         <text name="vs_hud_ending" text="Ends in %d s"/>
         <text name="vs_hud_nearestFar" text="Nearest network: %s, %d m - drive closer to join"/>
+        <text name="vs_hud_settings" text="Server settings"/>
+        <text name="vs_hud_settingsSaved" text="Saved with the savegame"/>
+        <text name="vs_hud_settingsAdminOnly" text="Only admins can change the settings"/>
+        <text name="vs_hud_on" text="On"/>
+        <text name="vs_hud_off" text="Off"/>
+        <text name="vs_setting_maxSyncSpeed" text="Max. harvester speed"/>
+        <text name="vs_setting_radioRange" text="Radio range"/>
+        <text name="vs_setting_connectRange" text="Join distance"/>
+        <text name="vs_setting_maxLeaderCurvature" text="Max. harvester turning"/>
+        <text name="vs_setting_abortDelay" text="Delay before a fault ends"/>
+        <text name="vs_setting_nudgeStepLateral" text="Nudge step left/right"/>
+        <text name="vs_setting_nudgeStepAlong" text="Nudge step fore/aft"/>
+        <text name="vs_setting_disengageOnCartFull" text="End when the cart is full"/>
+        <text name="vs_setting_keepSpeedOnSteering" text="Keep speed on steering"/>
         <text name="vs_warning_ending" text="Sync ends in %d s: %s"/>
         <text name="vs_fault_cart_full" text="Grain cart is full"/>
         <text name="vs_fault_leader_reversing" text="Harvester is reversing"/>

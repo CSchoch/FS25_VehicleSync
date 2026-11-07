@@ -330,7 +330,11 @@ function M.resetMission()
         warnings = {},
         extraPrintTexts = {},
         accessHandler = { access = {} },
+        isMasterUser = false,
+        userManager = { users = {} },
     }
+    function g_currentMission:getIsServer() return g_server ~= nil end
+    function g_currentMission.userManager:getUserByConnection(connection) return self.users[connection] end
     function g_currentMission:addIngameNotification(kind, text) table.insert(self.notifications, text) end
     function g_currentMission:showBlinkingWarning(text, duration) table.insert(self.warnings, text) end
     function g_currentMission:addExtraPrintText(text) table.insert(self.extraPrintTexts, text) end
@@ -400,6 +404,7 @@ M.SOURCE_ORDER = {
     "src/VehicleSyncSettings.lua",
     "src/network/VehicleSyncRequestEvent.lua",
     "src/network/VehicleSyncStateEvent.lua",
+    "src/network/VehicleSyncSettingsEvent.lua",
     "src/VehicleSyncSpec.lua",
     "src/hud/VehicleSyncHudLayout.lua",
     "src/hud/VehicleSyncHud.lua",

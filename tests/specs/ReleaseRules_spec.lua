@@ -30,7 +30,7 @@ describe("release rules", function()
     local sources = listFiles("src\\*.lua")
 
     it("finds all source files", function()
-        assert.equals(9, #sources)
+        assert.equals(10, #sources)
     end)
 
     it("uses none of the calls TestRunner's PublicLuaCheck rejects", function()

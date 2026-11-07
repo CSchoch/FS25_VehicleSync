@@ -69,6 +69,9 @@ VehicleSyncHudLayout.SIZE = {
     BUTTON = 30,
     BUTTON_ICON = 18,
     CLOSE_ICON = 12,
+    SETTINGS_ICON = 16,
+    SETTING_ROW = 26,  -- one setting: label, value and the - / + stepper
+    STEPPER = 22,
     TEXT_TITLE = 13,
     TEXT_STATE = 17,
     TEXT_BODY = 12,
@@ -98,6 +101,7 @@ VehicleSyncHudLayout.ICON = {
     HOME = { 2, 1 },
     CLOSE = { 3, 1 },
     SOLID = { 0, 2 },
+    GEAR = { 1, 2 },
 }
 VehicleSyncHudLayout.ICON_GRID = 4
 
@@ -108,8 +112,9 @@ VehicleSyncHudLayout.ROLE = {
     TRACTOR = "tractor",      -- anything else, not connected
 }
 
--- button layouts: one row of equal buttons, one full-width button, or the leader's nudge pad
-VehicleSyncHudLayout.BUTTONS = { ROW = "row", SINGLE = "single", LEADER = "leader" }
+-- button layouts: one row of equal buttons, one full-width button, the leader's nudge pad, or the
+-- - / + steppers of the settings rows
+VehicleSyncHudLayout.BUTTONS = { ROW = "row", SINGLE = "single", LEADER = "leader", SETTINGS = "settings" }
 
 ---UVs of an atlas cell in the GuiUtils.getUVs order. The solid cell is sampled in its centre so
 -- filtering never picks up a neighbouring glyph.
@@ -317,6 +322,38 @@ function VehicleSyncHudLayout.buildView(s, getText)
     return view
 end
 
+---Display text of a setting value: numbers with their unit, booleans On / Off
+function VehicleSyncHudLayout.formatSetting(row, getText)
+    if row.type == "boolean" then
+        return getText(row.value and "vs_hud_on" or "vs_hud_off")
+    end
+    local text = string.format("%." .. row.decimals .. "f", row.value * (row.scale or 1))
+    return text .. " " .. row.unit
+end
+
+---Builds the settings page of the terminal
+-- snapshot: {canEdit, rows {{name, type, value, decimals, unit, scale, canDecrease, canIncrease}}}
+---@param getText function key -> localised text
+---@return table view
+function VehicleSyncHudLayout.buildSettingsView(s, getText)
+    local view = {
+        title = getText("vs_hud_title"),
+        settingsOpen = true,
+        stateText = getText("vs_hud_settings"),
+        stateColor = VehicleSyncHudLayout.COLOR.STRAW,
+        rows = {},
+        buttons = {},
+        buttonLayout = VehicleSyncHudLayout.BUTTONS.SETTINGS,
+        readout = { message = getText(s.canEdit and "vs_hud_settingsSaved" or "vs_hud_settingsAdminOnly") },
+    }
+    for _, row in ipairs(s.rows) do
+        table.insert(view.rows, { label = getText("vs_setting_" .. row.name), value = VehicleSyncHudLayout.formatSetting(row, getText) })
+        table.insert(view.buttons, { text = "-", setting = row.name, direction = -1, enabled = s.canEdit and row.canDecrease })
+        table.insert(view.buttons, { text = "+", setting = row.name, direction = 1, enabled = s.canEdit and row.canIncrease })
+    end
+    return view
+end
+
 -- ---------------------------------------------------------------------------
 -- Layout
 -- ---------------------------------------------------------------------------
@@ -325,8 +362,29 @@ local function rect(x, y, w, h)
     return { x = x, y = y, w = w, h = h }
 end
 
+---Settings page: one row per setting with the - / + stepper on the right
+local function layoutSettingRows(lay, view, contentX, contentW, y)
+    local S = VehicleSyncHudLayout.SIZE
+    local unitX, unitY = lay.unitX, lay.unitY
+    local rowH = S.SETTING_ROW * unitY
+    local stepW, stepH = S.STEPPER * unitX, S.STEPPER * unitY
+    local gapX = S.GAP * unitX
+    local plusX = contentX + contentW - stepW
+    local minusX = plusX - gapX - stepW
+    lay.rows = {}
+    lay.banner = rect(contentX, y - S.BANNER * unitY, contentW, S.BANNER * unitY)
+    for i, row in ipairs(view.rows) do
+        y = y - rowH
+        local buttonY = y + (rowH - stepH) / 2
+        table.insert(lay.rows, { rect = rect(contentX, y, contentW, rowH), row = row, valueX = minusX - gapX })
+        table.insert(lay.buttons, { rect = rect(minusX, buttonY, stepW, stepH), button = view.buttons[2 * i - 1] })
+        table.insert(lay.buttons, { rect = rect(plusX, buttonY, stepW, stepH), button = view.buttons[2 * i] })
+    end
+    return y
+end
+
 ---Positions every element of the panel. `left` / `top` is the top left corner of the panel.
----@return table layout {panel, header, close, band, bar, plan, banner, readout, buttons {{rect, button}}, hits, width, height, unitX, unitY, pixelsPerMetre}
+---@return table layout {panel, header, close, settings, band, bar, plan | rows, banner, readout, buttons {{rect, button}}, hits, width, height, unitX, unitY, pixelsPerMetre}
 function VehicleSyncHudLayout.layout(view, left, top, unitX, unitY)
     local S = VehicleSyncHudLayout.SIZE
     local width = S.WIDTH * unitX
@@ -338,17 +396,22 @@ function VehicleSyncHudLayout.layout(view, left, top, unitX, unitY)
     local y = top - S.HEADER * unitY
     lay.header = rect(left, y, width, S.HEADER * unitY)
     lay.close = rect(left + width - S.HEADER * unitX, y, S.HEADER * unitX, S.HEADER * unitY)
+    lay.settings = rect(lay.close.x - S.HEADER * unitX, y, S.HEADER * unitX, S.HEADER * unitY)
 
     y = y - S.BAND * unitY
     lay.band = rect(left, y, width, S.BAND * unitY)
     lay.bar = rect(left, y, S.BAND_BAR * unitX, S.BAND * unitY)
 
-    local planHeight = view.plan.empty ~= nil and S.PLAN_EMPTY or S.PLAN
-    y = y - padY - planHeight * unitY
-    lay.plan = rect(contentX, y, contentW, planHeight * unitY)
-    lay.banner = rect(contentX, y + (planHeight - S.BANNER) * unitY, contentW, S.BANNER * unitY)
-    lay.window = VehicleSyncHudLayout.getWindow(view.plan.zoom)
-    lay.pixelsPerMetre = math.min(contentW / unitX / (2 * lay.window.lateral), planHeight / (lay.window.front + lay.window.back))
+    if view.rows ~= nil then
+        y = layoutSettingRows(lay, view, contentX, contentW, y - padY)
+    else
+        local planHeight = view.plan.empty ~= nil and S.PLAN_EMPTY or S.PLAN
+        y = y - padY - planHeight * unitY
+        lay.plan = rect(contentX, y, contentW, planHeight * unitY)
+        lay.banner = rect(contentX, y + (planHeight - S.BANNER) * unitY, contentW, S.BANNER * unitY)
+        lay.window = VehicleSyncHudLayout.getWindow(view.plan.zoom)
+        lay.pixelsPerMetre = math.min(contentW / unitX / (2 * lay.window.lateral), planHeight / (lay.window.front + lay.window.back))
+    end
 
     if view.readout ~= nil then
         y = y - S.READOUT * unitY
@@ -378,7 +441,7 @@ function VehicleSyncHudLayout.layout(view, left, top, unitX, unitY)
             table.insert(lay.buttons, { rect = rects[i], button = b })
         end
         y = lowerY
-    else
+    elseif view.buttonLayout ~= VehicleSyncHudLayout.BUTTONS.SETTINGS then
         local count = #buttons
         local buttonW = (contentW - (count - 1) * gapX) / count
         y = y - buttonH
@@ -391,8 +454,9 @@ function VehicleSyncHudLayout.layout(view, left, top, unitX, unitY)
     lay.height = top - y
     lay.panel = rect(left, y, width, lay.height)
 
-    -- the close button lies on the header, so it is tested first
+    -- close and settings buttons lie on the header, so they are tested first
     table.insert(lay.hits, { id = "close", rect = lay.close })
+    table.insert(lay.hits, { id = "settings", rect = lay.settings })
     table.insert(lay.hits, { id = "header", rect = lay.header })
     for i, item in ipairs(lay.buttons) do
         table.insert(lay.hits, { id = "button" .. i, rect = item.rect, button = item.button })

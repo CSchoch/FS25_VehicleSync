@@ -97,6 +97,7 @@ sitting in a vehicle can operate it.
 | <kbd>Left Alt</kbd> + <kbd>Y</kbd> | Open the terminal with the mouse cursor. While it is open, this brings the cursor back. |
 | Right click | Hide the cursor to look around. The terminal stays open. |
 | Drag the title bar | Move the terminal. The position is kept. |
+| Gear in the title bar | Switch between the sync view and the server settings. |
 | **×** in the title bar | Close the terminal. |
 
 All other functions have no default key, so they don't clash with other mods: open or close the
@@ -105,7 +106,12 @@ release. You can bind them under **Settings → Controls → Vehicle Sync**.
 
 ## Server settings
 
-The server admin changes these in the console. They are saved in `vehicleSync.xml` in the savegame.
+Click the gear in the terminal's title bar to see the settings the server uses. Every player
+sees them; only admins (or the host) can change them with the **−** / **+** buttons, which also
+works on a dedicated server. Changes go to every player at once and are saved in
+`vehicleSync.xml` in the savegame.
+
+The server console has the same settings:
 
 ```
 vsSettings                     list all settings

@@ -12,8 +12,11 @@
     - Right click hides the cursor (mouse look again), the terminal stays open.
     - The close button closes the terminal. Leaving the vehicle only hides it (and releases the
       cursor): the terminal comes back, without the cursor, when the player enters that vehicle again.
+    - The gear button switches between the sync view and the server settings. Everybody sees the
+      values the server uses; only admins can change them with the - / + steppers.
 
-    Buttons only send requests (vehicle:vsRequest), so the server stays authoritative. The layout
+    Buttons only send requests (vehicle:vsRequest, VehicleSyncSettingsEvent.sendStep), so the server
+    stays authoritative. The layout
     and the view model live in VehicleSyncHudLayout; this file draws them with one overlay on the
     icon atlas (its solid cell is used for all plain rectangles).
 ]]
@@ -48,6 +51,7 @@ function VehicleSyncHud:reset()
     self.left = nil
     self.top = nil
     self.message = nil
+    self.showSettings = false
 end
 
 VehicleSyncHud:reset()
@@ -83,6 +87,7 @@ function VehicleSyncHud:suspend()
     self.isDragging = false
     self.hoverId = nil
     self.message = nil
+    self.showSettings = false
 end
 
 ---Shows the terminal again (without the cursor) when the player sits in a vehicle whose terminal
@@ -204,12 +209,18 @@ function VehicleSyncHud:mouseEvent(posX, posY, isDown, isUp, button)
 
     if hit.id == "close" then
         self:close()
+    elseif hit.id == "settings" then
+        self.showSettings = not self.showSettings
     elseif hit.id == "header" then
         self.isDragging = true
         self.dragOffsetX = posX - self.left
         self.dragOffsetY = posY - self.top
     elseif hit.button ~= nil and hit.button.enabled then
-        self.vehicle:vsRequest(VehicleSyncSpec.ACTION[hit.button.action], hit.button.argument)
+        if hit.button.setting ~= nil then
+            VehicleSyncSettingsEvent.sendStep(hit.button.setting, hit.button.direction)
+        else
+            self.vehicle:vsRequest(VehicleSyncSpec.ACTION[hit.button.action], hit.button.argument)
+        end
     end
 end
 
@@ -306,6 +317,22 @@ function VehicleSyncHud.buildSnapshot(vehicle)
     return snapshot
 end
 
+---Collects the settings page: the values the server uses (clients receive a copy) and whether
+---the local player may change them
+function VehicleSyncHud.buildSettingsSnapshot()
+    local snapshot = { canEdit = VehicleSyncSettingsEvent.getCanChangeLocally(), rows = {} }
+    for _, def in ipairs(VehicleSyncSettings.DEFINITIONS) do
+        local row = {
+            name = def.name, type = def.type, value = VehicleSyncSettings.values[def.name],
+            decimals = def.decimals, unit = def.unit, scale = def.scale,
+            canDecrease = VehicleSyncSettings.canStep(def.name, -1),
+            canIncrease = VehicleSyncSettings.canStep(def.name, 1),
+        }
+        table.insert(snapshot.rows, row)
+    end
+    return snapshot
+end
+
 -- ---------------------------------------------------------------------------
 -- Drawing
 -- ---------------------------------------------------------------------------
@@ -344,7 +371,12 @@ function VehicleSyncHud:draw()
         self.overlay = Overlay.new(Utils.getFilename(VehicleSyncHud.ICON_FILENAME, VehicleSyncHud.MOD_DIRECTORY), 0, 0, 1, 1)
     end
 
-    local view = VehicleSyncHudLayout.buildView(VehicleSyncHud.buildSnapshot(vehicle), VehicleSyncHud.getText)
+    local view
+    if self.showSettings then
+        view = VehicleSyncHudLayout.buildSettingsView(VehicleSyncHud.buildSettingsSnapshot(), VehicleSyncHud.getText)
+    else
+        view = VehicleSyncHudLayout.buildView(VehicleSyncHud.buildSnapshot(vehicle), VehicleSyncHud.getText)
+    end
     local unitX, unitY = VehicleSyncHud.getUnits()
     local lay = VehicleSyncHudLayout.layout(view, 0, 1, unitX, unitY)
     self.width, self.height = lay.width, lay.height
@@ -399,14 +431,17 @@ function VehicleSyncHud:render(view, lay)
 
     self:drawRect(lay.panel, C.GLASS)
 
-    -- header: drag handle, title, partner, close
+    -- header: drag handle, title, partner, settings, close
     local header = lay.header
     local headerY = header.y + header.h / 2
     self:drawRect(header, (self.isDragging or self.hoverId == "header") and C.BEZEL_HOVER or C.BEZEL)
     self:drawText(header.x + padX, headerY, S.TEXT_TITLE, view.title, C.PAPER, RenderText.ALIGN_LEFT, true, nil, lay)
     if view.partner ~= nil then
-        self:drawText(lay.close.x, headerY, S.TEXT_BODY, view.partner, C.PAPER, RenderText.ALIGN_RIGHT, false, header.w / 2, lay)
+        self:drawText(lay.settings.x, headerY, S.TEXT_BODY, view.partner, C.PAPER, RenderText.ALIGN_RIGHT, false, header.w / 2, lay)
     end
+    local settings = lay.settings
+    self:drawIconAt(VehicleSyncHudLayout.ICON.GEAR, settings.x + settings.w / 2, headerY, S.SETTINGS_ICON, S.SETTINGS_ICON, lay,
+        (view.settingsOpen or self.hoverId == "settings") and C.STRAW or C.PAPER)
     local close = lay.close
     self:drawIconAt(VehicleSyncHudLayout.ICON.CLOSE, close.x + close.w / 2, headerY, S.CLOSE_ICON, S.CLOSE_ICON, lay,
         self.hoverId == "close" and C.WARNING or C.PAPER)
@@ -421,7 +456,11 @@ function VehicleSyncHud:render(view, lay)
         self:drawText(band.x + band.w - padX, bandY, S.TEXT_BODY, view.fillText, C.PAPER, RenderText.ALIGN_RIGHT, true, nil, lay)
     end
 
-    self:renderPlan(view.plan, lay)
+    if lay.rows ~= nil then
+        self:renderSettingRows(lay)
+    else
+        self:renderPlan(view.plan, lay)
+    end
     self:renderMessage(lay)
 
     if lay.readout ~= nil then
@@ -490,6 +529,24 @@ function VehicleSyncHud:renderPlan(plan, lay)
         self:drawIconAt(ICON.CART, cartX, cartY, S.CART_ICON_W, S.CART_ICON_H, lay, item.color)
         -- the target on top: the cart has to be moved below it
         self:drawIconAt(ICON.HOME, homeX, homeY, S.HOME_ICON, S.HOME_ICON, lay, C.STRAW)
+    end
+end
+
+---Settings page: label on the left, value right-aligned before the stepper, every second row shaded
+function VehicleSyncHud:renderSettingRows(lay)
+    local C = VehicleSyncHudLayout.COLOR
+    local S = VehicleSyncHudLayout.SIZE
+    local padX = S.PADDING * lay.unitX
+    for i, item in ipairs(lay.rows) do
+        local r = item.rect
+        local centerY = r.y + r.h / 2
+        if i % 2 == 1 then
+            self:drawRect(r, VehicleSyncHudLayout.withAlpha(C.BEZEL, 0.6))
+        end
+        local valueWidth = (item.valueX - r.x) * 0.35
+        self:drawText(r.x + padX / 2, centerY, S.TEXT_BODY, item.row.label, C.PAPER, RenderText.ALIGN_LEFT, false,
+            item.valueX - r.x - valueWidth - padX, lay)
+        self:drawText(item.valueX, centerY, S.TEXT_BODY, item.row.value, C.PAPER, RenderText.ALIGN_RIGHT, true, valueWidth, lay)
     end
 end
 

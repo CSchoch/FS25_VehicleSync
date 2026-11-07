@@ -455,6 +455,95 @@ describe("VehicleSyncHud", function()
         end)
     end)
 
+    describe("settings page", function()
+        local function openSettings()
+            local v = V.create({ name = "Tractor", entered = true })
+            Hud:toggle(v)
+            Hud:draw()
+            click("settings")
+            engine.drawn = { lines = {}, rects = {}, texts = {} }
+            Hud:draw()
+            return v
+        end
+
+        it("switches between the sync view and the settings with the gear button", function()
+            local v = openSettings()
+            assert.is_true(Hud.showSettings)
+            local t = drawnTexts()
+            for _, text in ipairs({ "Server settings", "Max. harvester speed", "16 km/h", "500 m", "60 m", "0.5 °/m", "5 s",
+                "0.25 m", "On", "Saved with the savegame" }) do
+                assert.is_not_nil(t[text], text)
+            end
+            assert.equals(RenderText.ALIGN_RIGHT, t["16 km/h"].alignment)
+            assert.is_true(t["16 km/h"].bold)
+            -- no plan view; every second row shaded; the open gear in straw
+            assert.equals(0, rectsWithColor(Layout.COLOR.STUBBLE))
+            assert.equals(5, rectsWithColor(Layout.withAlpha(Layout.COLOR.BEZEL, 0.6)))
+            assert.is_true(rectsWithColor(Layout.COLOR.STRAW) >= 2)
+
+            click("settings")
+            engine.drawn = { lines = {}, rects = {}, texts = {} }
+            Hud:draw()
+            assert.is_false(Hud.showSettings)
+            assert.is_nil(drawnTexts()["Server settings"])
+            assert.equals(v, Hud.vehicle)
+        end)
+        it("changes a setting on the server and tells every player", function()
+            openSettings()
+            click("button2")   -- maxSyncSpeed +
+            click("button9")   -- abortDelay -
+            click("button15")  -- disengageOnCartFull -
+            assert.equals(17, VehicleSyncSettings.values.maxSyncSpeed)
+            assert.equals(4000, VehicleSyncSettings.values.abortDelay)
+            assert.is_false(VehicleSyncSettings.values.disengageOnCartFull)
+            assert.equals(3, #g_server.broadcasts)
+            engine.drawn = { lines = {}, rects = {}, texts = {} }
+            Hud:draw()
+            local t = drawnTexts()
+            assert.is_not_nil(t["17 km/h"])
+            assert.is_not_nil(t["4 s"])
+            -- a disabled stepper does nothing: the option is off already
+            click("button15")
+            assert.equals(3, #g_server.broadcasts)
+        end)
+        it("asks the server when an admin changes a setting on a client", function()
+            g_server = nil
+            g_currentMission.isMasterUser = true
+            openSettings()
+            click("button1")
+            local sent = g_client.serverConnection.sent
+            assert.equals(1, #sent)
+            assert.equals(VehicleSyncSettings.getIndex("maxSyncSpeed"), sent[1].index)
+            assert.equals(-1, sent[1].direction)
+            -- the value changes when the server answers
+            assert.equals(16, VehicleSyncSettings.values.maxSyncSpeed)
+        end)
+        it("only shows the settings to players who are not admins", function()
+            g_server = nil
+            openSettings()
+            assert.is_not_nil(drawnTexts()["Only admins can change the settings"])
+            for i = 1, 2 * #VehicleSyncSettings.DEFINITIONS do
+                click("button" .. i)
+            end
+            assert.equals(0, #g_client.serverConnection.sent)
+        end)
+        it("returns to the sync view after leaving the vehicle", function()
+            local v = openSettings()
+            v.entered = false
+            Hud:draw()
+            v.entered = true
+            Hud:draw()
+            assert.is_true(Hud.isOpen)
+            assert.is_false(Hud.showSettings)
+        end)
+        it("shows messages over the settings", function()
+            local v = openSettings()
+            Hud:showMessage(v, "Home point saved", false)
+            Hud:draw()
+            assert.is_not_nil(drawnTexts()["Home point saved"])
+        end)
+    end)
+
     describe("messages", function()
         local function bannerTexts()
             local list = {}

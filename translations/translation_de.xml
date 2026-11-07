@@ -55,6 +55,20 @@
         <text name="vs_hud_ready" text="Bereit zum Aktivieren"/>
         <text name="vs_hud_ending" text="Endet in %d s"/>
         <text name="vs_hud_nearestFar" text="Nächstes Netzwerk: %s, %d m - zum Beitreten näher heranfahren"/>
+        <text name="vs_hud_settings" text="Server-Einstellungen"/>
+        <text name="vs_hud_settingsSaved" text="Wird mit dem Spielstand gespeichert"/>
+        <text name="vs_hud_settingsAdminOnly" text="Nur Administratoren können die Einstellungen ändern"/>
+        <text name="vs_hud_on" text="Ein"/>
+        <text name="vs_hud_off" text="Aus"/>
+        <text name="vs_setting_maxSyncSpeed" text="Max. Dreschergeschwindigkeit"/>
+        <text name="vs_setting_radioRange" text="Funkreichweite"/>
+        <text name="vs_setting_connectRange" text="Beitrittsentfernung"/>
+        <text name="vs_setting_maxLeaderCurvature" text="Max. Drescherkurve"/>
+        <text name="vs_setting_abortDelay" text="Verzögerung bis Abbruch"/>
+        <text name="vs_setting_nudgeStepLateral" text="Versatzschritt seitlich"/>
+        <text name="vs_setting_nudgeStepAlong" text="Versatzschritt längs"/>
+        <text name="vs_setting_disengageOnCartFull" text="Beenden bei vollem Wagen"/>
+        <text name="vs_setting_keepSpeedOnSteering" text="Tempo beim Lenken halten"/>
         <text name="vs_warning_ending" text="Synchronisation endet in %d s: %s"/>
         <text name="vs_fault_cart_full" text="Überladewagen ist voll"/>
         <text name="vs_fault_leader_reversing" text="Drescher setzt zurück"/>

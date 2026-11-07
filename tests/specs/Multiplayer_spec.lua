@@ -214,6 +214,51 @@ describe("Multiplayer", function()
         assert.near(world.follower:vsGetHome().x, lateFollower:vsGetHome().x)
     end)
 
+    it("tells a player joining later whether the idle tractor can join", function()
+        Spec.actionEventToggleNetwork(world.harvesterPlayer.leader)
+        flushRequests(world.harvesterPlayer)
+        -- the server answers "can join" once, while only the first two players are connected
+        serverFrames(1)
+        assert.equals(REASON.CONNECTED, Spec.getSpec(world.follower).live.check)
+        serverFrames(1)
+
+        local stream = engine.createStream()
+        world.follower:onWriteStream(stream, engine.createConnection(false))
+        NetworkUtil.side = "clientLate"
+        local lateTractor = V.create({ name = "Tractor", networkId = 101, side = "clientLate", isServer = false })
+        lateTractor:onReadStream(stream, engine.createConnection(true))
+        NetworkUtil.side = "server"
+        assert.equals(REASON.CONNECTED, Spec.getSpec(lateTractor).live.check)
+    end)
+
+    it("lets only an admin change the server settings from the terminal", function()
+        local hp, tp = world.harvesterPlayer, world.tractorPlayer
+        local isAdmin = { [hp.toServer] = true, [tp.toServer] = false }
+        for connection, admin in pairs(isAdmin) do
+            g_currentMission.userManager.users[connection] = { getIsMasterUser = function() return admin end }
+        end
+        local index = VehicleSyncSettings.getIndex("maxSyncSpeed")
+
+        -- the tractor player is no admin: the server ignores the request
+        g_client:getServerConnection():sendEvent(VehicleSyncSettingsEvent.newRequest(index, 1))
+        flushRequests(tp)
+        assert.equals(16, VehicleSyncSettings.values.maxSyncSpeed)
+
+        -- the admin's step reaches the server, which sends the new values to every player
+        local delivered = 0
+        local applyValues = VehicleSyncSettings.applyValues
+        VehicleSyncSettings.applyValues = function(values)
+            delivered = delivered + 1
+            applyValues(values)
+        end
+        g_client:getServerConnection():sendEvent(VehicleSyncSettingsEvent.newRequest(index, 1))
+        flushRequests(hp)
+        VehicleSyncSettings.applyValues = applyValues
+        assert.equals(17, VehicleSyncSettings.values.maxSyncSpeed)
+        assert.equals(#world.clients, delivered)
+        assert.equals(17, VehicleSyncSettings.get().maxSyncSpeed)
+    end)
+
     it("replicates live HUD values with the update stream", function()
         local tp = world.tractorPlayer
         Spec.actionEventToggleNetwork(world.harvesterPlayer.leader)

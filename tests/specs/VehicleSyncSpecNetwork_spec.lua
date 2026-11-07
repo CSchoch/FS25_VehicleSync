@@ -56,6 +56,19 @@ describe("VehicleSyncSpec network", function()
             assert.is_nil(clientLeader:vsGetHome())
             assert.is_nil(Spec.getSpec(clientLeader).pendingLeaderId)
         end)
+        it("streams the live values the server only sends when they change", function()
+            local tractor = V.create({ networkId = 25 })
+            Spec.getSpec(tractor).live = { lateralError = 0, alongError = 0, inZone = false,
+                check = REASON.OUT_OF_RANGE, abortRemaining = 0 }
+            local stream = engine.createStream()
+            tractor:onWriteStream(stream, nil)
+            NetworkUtil.side = "client"
+            local client = V.create({ networkId = 25, side = "client", isServer = false })
+            client:onReadStream(stream, nil)
+            NetworkUtil.side = "server"
+            assert.equals(REASON.OUT_OF_RANGE, Spec.getSpec(client).live.check)
+            assert.equals(stream.readPos - 1, #stream.data)
+        end)
         it("streams the automatic home flag", function()
             local follower = V.create({ networkId = 30 })
             local spec = Spec.getSpec(follower)

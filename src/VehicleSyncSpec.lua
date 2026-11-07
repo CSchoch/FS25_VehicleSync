@@ -1143,10 +1143,12 @@ function VehicleSyncSpec:onWriteStream(streamId, connection)
         streamWriteFloat32(streamId, spec.home.z)
         streamWriteBool(streamId, spec.homeIsAuto)
     end
+    -- the server raises the live values only when they change (idle vehicles): a joining client
+    -- would otherwise keep its defaults until the next change
+    VehicleSyncSpec.writeLive(streamId, spec.live)
 end
 
 function VehicleSyncSpec:onReadStream(streamId, connection)
-    local spec = VehicleSyncSpec.getSpec(self)
     local networkEnabled = streamReadBool(streamId)
     local state = streamReadUIntN(streamId, VehicleSyncController.NUM_STATE_BITS)
     local leaderId = nil
@@ -1159,11 +1161,41 @@ function VehicleSyncSpec:onReadStream(streamId, connection)
         homeIsAuto = streamReadBool(streamId)
     end
 
-    self:vsApplyState(state, nil, home, homeIsAuto, networkEnabled, REASON.NONE)
-    spec.state = state
-    -- the leader may be streamed after this vehicle: resolve lazily
-    spec.pendingLeaderId = leaderId
-    self:vsGetLeader()
+    VehicleSyncSpec.applyReceivedState(self, state, leaderId, home, homeIsAuto, networkEnabled, REASON.NONE)
+    -- after the state: applying a new state resets the check
+    VehicleSyncSpec.readLive(streamId, VehicleSyncSpec.getSpec(self).live)
+end
+
+---Client: applies a state received from the server whose leader is only known by its network id.
+-- The leader may not exist on this machine yet (streamed later); it is then resolved lazily (vsGetLeader).
+function VehicleSyncSpec.applyReceivedState(vehicle, state, leaderId, home, homeIsAuto, networkEnabled, reason)
+    local leader = nil
+    if leaderId ~= nil then
+        leader = NetworkUtil.getObject(leaderId)
+        if not VehicleSyncSpec.isValidVehicle(leader) then
+            leader = nil
+        end
+    end
+    vehicle:vsApplyState(state, leader, home, homeIsAuto, networkEnabled, reason)
+    if leader == nil and state ~= STATE.IDLE then
+        VehicleSyncSpec.getSpec(vehicle).pendingLeaderId = leaderId
+    end
+end
+
+function VehicleSyncSpec.writeLive(streamId, live)
+    streamWriteFloat32(streamId, live.lateralError)
+    streamWriteFloat32(streamId, live.alongError)
+    streamWriteBool(streamId, live.inZone)
+    streamWriteUInt8(streamId, live.check)
+    streamWriteFloat32(streamId, live.abortRemaining)
+end
+
+function VehicleSyncSpec.readLive(streamId, live)
+    live.lateralError = streamReadFloat32(streamId)
+    live.alongError = streamReadFloat32(streamId)
+    live.inZone = streamReadBool(streamId)
+    live.check = streamReadUInt8(streamId)
+    live.abortRemaining = streamReadFloat32(streamId)
 end
 
 function VehicleSyncSpec:onWriteUpdateStream(streamId, connection, dirtyMask)
@@ -1172,11 +1204,7 @@ function VehicleSyncSpec:onWriteUpdateStream(streamId, connection, dirtyMask)
     end
     local spec = VehicleSyncSpec.getSpec(self)
     if streamWriteBool(streamId, bit32.band(dirtyMask, spec.dirtyFlag) ~= 0) then
-        streamWriteFloat32(streamId, spec.live.lateralError)
-        streamWriteFloat32(streamId, spec.live.alongError)
-        streamWriteBool(streamId, spec.live.inZone)
-        streamWriteUInt8(streamId, spec.live.check)
-        streamWriteFloat32(streamId, spec.live.abortRemaining)
+        VehicleSyncSpec.writeLive(streamId, spec.live)
     end
 end
 
@@ -1186,11 +1214,7 @@ function VehicleSyncSpec:onReadUpdateStream(streamId, timestamp, connection)
     end
     local spec = VehicleSyncSpec.getSpec(self)
     if streamReadBool(streamId) then
-        spec.live.lateralError = streamReadFloat32(streamId)
-        spec.live.alongError = streamReadFloat32(streamId)
-        spec.live.inZone = streamReadBool(streamId)
-        spec.live.check = streamReadUInt8(streamId)
-        spec.live.abortRemaining = streamReadFloat32(streamId)
+        VehicleSyncSpec.readLive(streamId, spec.live)
         VehicleSyncSpec.showAbortWarning(self)
     end
 end

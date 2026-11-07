@@ -24,9 +24,10 @@ After every code change:
 | --- | --- |
 | `src/VehicleSyncMath.lua` | Pure 2D geometry (x/z plane, +z forward, +x left, positive curvature = left) |
 | `src/VehicleSyncController.lua` | Pure state machine (IDLE/CONNECTED/ACQUIRING/TRACKING), rules, zone, home point, nudges, pure-pursuit steering and speed law. No engine calls. |
-| `src/VehicleSyncSettings.lua` | Server settings, `vehicleSync.xml` in the savegame, console `vsSettings` / `vsSet` |
+| `src/VehicleSyncSettings.lua` | Server settings (range, terminal step, display unit), `vehicleSync.xml` in the savegame, console `vsSettings` / `vsSet` |
 | `src/network/VehicleSyncRequestEvent.lua` | client -> server operator actions |
 | `src/network/VehicleSyncStateEvent.lua` | server -> clients full state (+ feedback-only variant for refusals) |
+| `src/network/VehicleSyncSettingsEvent.lua` | settings: server -> clients all values (join via `FSBaseMission.onConnectionFinishedLoading`, after every change), client -> server one step (admins only) |
 | `src/VehicleSyncSpec.lua` | Vehicle specialization (glue): requests, server rules, driving override, streams, input, home point arrow |
 | `src/hud/VehicleSyncHudLayout.lua` | Pure terminal model: design tokens, `buildView(snapshot)`, `layout`, plan view projection, hit test |
 | `src/hud/VehicleSyncHud.lua` | Terminal (glue): drawing with one overlay on `textures/hud_icons.dds`, mouse, cursor, drag, position in modSettings |
@@ -43,8 +44,10 @@ Key facts:
 - Poses use `getAIDirectionNode()` (falls back to `rootNode`); the pipe outlet is measured with
   `localToLocal(dischargeNode.node, directionNode)` only while the pipe is in an unloading state.
 - The cart point is the first `fillUnit.exactFillRootNode` of an attached vehicle (what pipes aim at).
-- Join in progress: `onWriteStream` / `onReadStream`; the leader may be streamed after the follower,
-  so the leader id is resolved lazily (`pendingLeaderId`, `vsGetLeader`).
+- Join in progress: `onWriteStream` / `onReadStream`, including `live` (the server raises it only
+  on change for idle vehicles); the leader may be streamed after the follower, so clients resolve
+  the leader id lazily (`applyReceivedState` -> `pendingLeaderId`, `vsGetLeader`), for the join
+  stream and for state events alike.
 - Timers / takeover flags reset only when engaged-ness changes (ACQUIRING <-> TRACKING keeps them).
 - **Aborts:** operator takeover (steering, pedals, cruise, leaving) and engine off end the sync
   at once; machine faults (`VehicleSyncController.getFault`: cart full, harvester reversing / too
@@ -66,6 +69,12 @@ Key facts:
 - Messages go through `VehicleSyncSpec.showNotification(text, isWarning, vehicle)`: while the
   terminal is open for that vehicle they appear in its banner (4 s), otherwise as game
   notifications; the blinking abort countdown is skipped while the terminal shows it.
+- **Settings:** the gear button in the terminal header shows `buildSettingsView` (one row per
+  `VehicleSyncSettings.DEFINITIONS` entry with a - / + stepper). Everybody sees the server's values
+  (clients get a copy, `applyValues`; clients never reset them in `loadMap`); only the host or a
+  master user (`g_currentMission.isMasterUser`) can edit. The server re-checks every request with
+  `userManager:getUserByConnection(connection):getIsMasterUser()` and broadcasts the new values;
+  console `vsSet` broadcasts too.
 - Colours in `VehicleSyncHudLayout.COLOR` are sRGB hex converted to linear (engine colour space).
 - Home point arrow: `drawDebugLine` arrow, tip 6 m above the terrain, shown 5 s after set/nudge.
 
@@ -85,11 +94,12 @@ Key facts:
 `python tools/make_icon.py` draws `_art/icon_VehicleSync.png` and converts it with texconv
 (found in `..\FS25_WorkflowManager\tools\texconv.exe`).
 `python tools/make_hud_icons.py` draws the terminal atlas `textures/hud_icons.dds` (4x4 cells of
-64 px, order must match `VehicleSyncHudLayout.ICON`; the solid cell is used for all rectangles).
+64 px, order must match `VehicleSyncHudLayout.ICON`; the solid cell is used for all rectangles,
+the gear sits next to it).
 
 ## README images
 
-- `docs/terminal.svg`: `lua tools/render_hud_preview.lua` renders three terminal states from the real
+- `docs/terminal.svg`: `lua tools/render_hud_preview.lua` renders three terminal states and the settings page from the real
   `buildView` / `layout` with the English texts (mirrors `VehicleSyncHud:render`). Re-run it after HUD
   layout, colour or text changes.
 - `_art/social_preview.png` (1280x640): `python tools/make_social_preview.py`, uploaded by hand under
